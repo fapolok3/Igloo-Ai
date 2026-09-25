@@ -1,0 +1,23 @@
+{
+  "short_name": "Igloo Reply",
+  "name": "Igloo Facebook Reply Assistant",
+  "icons": [
+    {
+      "src": "/pwa-icon.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/pwa-icon.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#b91c1c",
+  "theme_color": "#b91c1c",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "description": "Igloo Ice Cream Facebook Reply AI Assistant"
+}

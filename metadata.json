@@ -1,0 +1,6 @@
+{
+  "name": "Igloo Facebook Reply Assistant",
+  "description": "ইগলু কাস্টমার সাপোর্ট এআই অ্যাসিস্ট্যান্ট - ১-ট্যাপ স্মার্ট রিপ্লাই, অফিসিয়াল প্রাইস লিস্ট ও নলেজ বেস।",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
