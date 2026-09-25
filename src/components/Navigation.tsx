@@ -66,10 +66,13 @@ export const Navigation: React.FC<NavigationProps> = ({
         </div>
       </div>
 
-      {/* Bottom Floating Mobile Tab Bar (Modern Purple Accent) */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200/90 shadow-2xl safe-area-bottom">
+      {/* 
+        Bottom Floating Mobile Tab Bar (Modern Purple Accent)
+        Elevated above Android & iOS Navigation Gestures & Home Bar
+      */}
+      <div className="sm:hidden fixed bottom-3 left-3 right-3 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-3xl shadow-2xl shadow-purple-950/20 px-2 py-2 mb-[env(safe-area-inset-bottom,4px)]">
         <div
-          className={`grid h-16 max-w-md mx-auto px-2 ${
+          className={`grid h-14 max-w-md mx-auto items-center ${
             userRole === 'super_admin' ? 'grid-cols-4' : 'grid-cols-3'
           }`}
         >
@@ -80,7 +83,7 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`flex flex-col items-center justify-center space-y-1 transition active:scale-95 select-none relative cursor-pointer ${
+                className={`flex flex-col items-center justify-center space-y-1 transition active:scale-95 select-none relative cursor-pointer py-1 ${
                   isActive ? 'text-purple-600' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
@@ -91,7 +94,7 @@ export const Navigation: React.FC<NavigationProps> = ({
                 >
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className={`text-[10px] tracking-tight ${isActive ? 'font-black' : 'font-semibold'}`}>
+                <span className={`text-[10px] tracking-tight leading-none ${isActive ? 'font-black' : 'font-semibold'}`}>
                   {tab.label}
                 </span>
               </button>

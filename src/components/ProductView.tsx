@@ -111,7 +111,7 @@ Thank you.`;
   });
 
   return (
-    <div className="space-y-4 pb-28 sm:pb-12 animate-in fade-in duration-150">
+    <div className="space-y-4 pb-36 sm:pb-12 animate-in fade-in duration-150">
       {/* Toast Notification */}
       {syncStatusMsg && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-purple-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl border border-purple-700 flex items-center space-x-2 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">

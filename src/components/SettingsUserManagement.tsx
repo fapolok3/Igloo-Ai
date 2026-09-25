@@ -99,7 +99,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   };
 
   return (
-    <div className="space-y-5 pb-28 sm:pb-12 animate-in fade-in duration-150">
+    <div className="space-y-5 pb-36 sm:pb-12 animate-in fade-in duration-150">
       {/* Top Banner */}
       <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-3">

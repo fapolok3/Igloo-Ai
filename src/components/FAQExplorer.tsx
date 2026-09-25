@@ -91,7 +91,7 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
   }
 
   return (
-    <div className="space-y-4 pb-28 sm:pb-12 animate-in fade-in duration-150">
+    <div className="space-y-4 pb-36 sm:pb-12 animate-in fade-in duration-150">
       {/* Top Search & Filter Bar */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/90 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
