@@ -3,7 +3,6 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  Shield,
   ArrowRight,
   Lock,
   Mail
@@ -73,7 +72,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-[#13072b] via-[#1a0a38] to-[#0f051d] flex flex-col justify-center items-center px-4 py-6 selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[#13072b] via-[#1a0a38] to-[#0f051d] flex flex-col justify-between items-center px-4 py-2 sm:py-4 selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
       {/* Dynamic Animated Ambient Background Glow Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Soft Radial Neon Halos */}
@@ -111,65 +110,60 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </svg>
       </div>
 
-      {/* Main Unified Card Container - Perfectly centered in the middle */}
-      <div className="relative z-10 w-full max-w-md mx-auto my-auto py-2">
+      {/* Top Branding Bar - Positioned high up at the top */}
+      <div className="relative z-10 w-full max-w-md mx-auto pt-3 sm:pt-6 pb-1 px-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-lg shadow-purple-950/40 border-2 border-purple-400/40 relative group overflow-hidden flex-shrink-0">
+              <img
+                src="https://igloobd.com/default/assets/img/about/about1.jpg"
+                alt="Igloo Logo"
+                className="w-full h-full object-cover rounded-xl"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-transparent pointer-events-none" />
+            </div>
+
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
+                  Igloo
+                </span>
+                <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/25 tracking-wider">
+                  AI
+                </span>
+              </div>
+              <p className="text-xs text-purple-200/90 font-semibold tracking-wide">
+                Customer Support Intelligence
+              </p>
+            </div>
+          </div>
+
+          {/* Version Badge */}
+          <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>V2.0.1</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Login Section - Vertically Centered in the middle */}
+      <div className="relative z-10 w-full max-w-md mx-auto my-auto py-2 space-y-2.5">
+        {/* Only Good Evening Greeting - Positioned directly on top of the Login Box */}
+        <div className="px-2 space-y-0.5">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
+            <span>{greetingInfo.greeting}</span>
+            <span className="text-lg">{greetingInfo.icon}</span>
+          </h2>
+          <p className="text-xs text-purple-200/80 font-medium">
+            Sign in to access corporate replies, live catalog & FAQs
+          </p>
+        </div>
+
         {/* Luxe White Glass Card */}
         <div className="w-full bg-white/95 backdrop-blur-xl rounded-[32px] px-5 sm:px-7 py-6 sm:py-7 shadow-[0_25px_60px_-15px_rgba(76,29,149,0.45)] border border-white/80 space-y-4">
-          {/* Card Top Branding Bar */}
-          <div className="flex items-center justify-between pb-1">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-md shadow-purple-950/15 border-2 border-purple-200/90 relative group overflow-hidden flex-shrink-0">
-                <img
-                  src="https://igloobd.com/default/assets/img/about/about1.jpg"
-                  alt="Igloo Logo"
-                  className="w-full h-full object-cover rounded-xl"
-                  onError={(e) => {
-                    (e.target as HTMLElement).style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/15 to-transparent pointer-events-none" />
-              </div>
-
-              <div>
-                <div className="flex items-center space-x-1.5">
-                  <span className="text-xl font-black text-slate-900 tracking-tight font-sans">
-                    Igloo
-                  </span>
-                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs tracking-wider">
-                    AI
-                  </span>
-                </div>
-                <p className="text-[11px] text-purple-700 font-semibold tracking-tight">
-                  Customer Support Intelligence
-                </p>
-              </div>
-            </div>
-
-            {/* Version Badge */}
-            <div className="px-2.5 py-1 rounded-full bg-purple-50 text-[10px] font-extrabold text-purple-700 border border-purple-200/80 flex items-center space-x-1.5 shadow-2xs">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>V2.0.1</span>
-            </div>
-          </div>
-
-          {/* Dynamic Time-Based Greeting Banner */}
-          <div className="bg-gradient-to-r from-purple-50 via-indigo-50/60 to-purple-50 rounded-2xl p-3 sm:p-3.5 border border-purple-200/70 shadow-2xs flex items-center justify-between">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-sm shadow-purple-600/25 flex-shrink-0">
-                {greetingInfo.icon}
-              </div>
-              <div>
-                <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-1.5 leading-tight">
-                  <span>{greetingInfo.greeting}!</span>
-                  <span className="text-xs font-bold text-purple-700">({greetingInfo.greetingBn})</span>
-                </h2>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  Sign in to access corporate replies & live catalog
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Error Notification Alert */}
           {errorMessage && (
             <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-2.5 text-xs text-red-700 font-bold animate-in fade-in zoom-in-95 duration-150 shadow-xs">
@@ -263,28 +257,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               </button>
             </div>
           </form>
-
-          {/* Quick Autofill Badge Card */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={handleFillSuperAdmin}
-              className="w-full py-2.5 px-3.5 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 hover:from-purple-100 hover:to-indigo-100 border border-purple-200/90 rounded-2xl text-purple-900 transition flex items-center justify-between text-xs font-bold cursor-pointer group shadow-2xs"
-            >
-              <div className="flex items-center space-x-2.5">
-                <div className="p-1.5 rounded-xl bg-purple-200/80 text-purple-700 group-hover:scale-105 transition-transform shadow-2xs">
-                  <Shield className="w-3.5 h-3.5" />
-                </div>
-                <div className="text-left">
-                  <span className="block text-[11px] font-black text-purple-950 leading-tight">Super Admin One-Tap Login</span>
-                  <span className="block text-[10px] text-purple-700 font-mono">fapolok7@gmail.com</span>
-                </div>
-              </div>
-              <span className="text-[10px] uppercase font-black bg-purple-600 text-white px-2.5 py-1 rounded-xl shadow-xs group-hover:bg-purple-700 transition">
-                Tap
-              </span>
-            </button>
-          </div>
 
           {/* Footer info: Developed by Fa Polok */}
           <div className="text-center text-xs text-slate-400 pt-2 font-medium flex items-center justify-center space-x-2 border-t border-slate-100">
