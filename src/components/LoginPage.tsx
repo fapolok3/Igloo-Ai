@@ -73,7 +73,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#13072b] flex flex-col justify-between selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
+    <div className="min-h-[100dvh] bg-[#13072b] flex flex-col justify-start sm:justify-center items-center px-4 py-3 sm:py-8 selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
       {/* Dynamic Animated Ambient Background Glow Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Soft Radial Neon Halos */}
@@ -111,180 +111,180 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </svg>
       </div>
 
-      {/* Top Header & Branding Section - Compact on mobile to leave ample room for keyboard */}
-      <div className="relative z-10 px-6 pt-6 sm:pt-10 pb-3 sm:pb-5 max-w-md w-full mx-auto flex flex-col justify-between">
-        {/* Brand Bar */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-xl shadow-purple-950/50 border-2 border-purple-400/40 relative group overflow-hidden flex-shrink-0">
-              <img
-                src="https://igloobd.com/default/assets/img/about/about1.jpg"
-                alt="Igloo Logo"
-                className="w-full h-full object-cover rounded-xl"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-transparent pointer-events-none" />
-            </div>
-
-            <div>
-              <div className="flex items-center space-x-1.5">
-                <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
-                  Igloo
-                </span>
-                {/* Clean "AI" tag without icon */}
-                <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/20 tracking-wider">
-                  AI
-                </span>
+      {/* Main Unified Container - Positioned at top on mobile, centered on desktop */}
+      <div className="relative z-10 w-full max-w-md mx-auto flex flex-col space-y-3 sm:space-y-4 pb-28 sm:pb-6 pt-1 sm:pt-4">
+        {/* Top Header & Branding Section */}
+        <div className="px-1 sm:px-2 space-y-2">
+          {/* Brand Bar */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-xl shadow-purple-950/50 border-2 border-purple-400/40 relative group overflow-hidden flex-shrink-0">
+                <img
+                  src="https://igloobd.com/default/assets/img/about/about1.jpg"
+                  alt="Igloo Logo"
+                  className="w-full h-full object-cover rounded-xl"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-transparent pointer-events-none" />
               </div>
-              <p className="text-[10px] sm:text-[11px] text-purple-200/80 font-semibold tracking-wide">
-                Customer Support Intelligence
-              </p>
+
+              <div>
+                <div className="flex items-center space-x-1.5">
+                  <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
+                    Igloo
+                  </span>
+                  {/* Clean "AI" tag without icon */}
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/20 tracking-wider">
+                    AI
+                  </span>
+                </div>
+                <p className="text-[10px] sm:text-[11px] text-purple-200/80 font-semibold tracking-wide">
+                  Customer Support Intelligence
+                </p>
+              </div>
+            </div>
+
+            {/* Version Pill */}
+            <div className="px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>V2.0.1</span>
             </div>
           </div>
 
-          {/* Version Pill */}
-          <div className="px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>V2.0.1</span>
+          {/* Dynamic Time-Based Greeting Typography */}
+          <div className="pt-1 space-y-0.5">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
+              <span>{greetingInfo.greeting}</span>
+              <span className="text-lg sm:text-xl">{greetingInfo.icon}</span>
+            </h2>
+            <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium">
+              Sign in to access corporate replies, live catalog & FAQs
+            </p>
           </div>
         </div>
 
-        {/* Dynamic Time-Based Greeting Typography */}
-        <div className="mt-4 sm:mt-6 space-y-1">
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
-            <span>{greetingInfo.greeting}</span>
-            <span className="text-lg sm:text-xl">{greetingInfo.icon}</span>
-          </h2>
-          <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium">
-            Sign in to access corporate replies, live catalog & FAQs
-          </p>
-        </div>
-      </div>
-
-      {/* Modern Glass Bottom Card Container */}
-      <div className="relative z-10 w-full bg-white rounded-t-[32px] sm:rounded-t-[38px] px-5 sm:px-8 pt-4 sm:pt-5 pb-10 sm:pb-8 max-w-md mx-auto shadow-2xl shadow-purple-950/40 border-t border-purple-100/80 space-y-4">
-        {/* Top Handle / Pull Indicator Bar */}
-        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto" />
-
-        {/* Error Notification Alert */}
-        {errorMessage && (
-          <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-2.5 text-xs text-red-700 font-bold animate-in fade-in zoom-in-95 duration-150 shadow-xs">
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Main Input Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
-          {/* Email Address */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-black text-slate-700 flex items-center justify-between">
-              <span>Official Email Address</span>
-            </label>
-            <div className="relative">
-              <Mail className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                isFocused === 'email' ? 'text-purple-600' : 'text-slate-400'
-              }`} />
-              <input
-                type="email"
-                value={email}
-                onFocus={(e) => handleInputFocus('email', e)}
-                onBlur={() => setIsFocused(null)}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. executive@igloobd.com"
-                required
-                className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs"
-              />
+        {/* Modern Solid White Card Container */}
+        <div className="w-full bg-white rounded-3xl px-5 sm:px-8 py-5 sm:py-6 shadow-2xl shadow-purple-950/60 border border-purple-100/90 space-y-4">
+          {/* Error Notification Alert */}
+          {errorMessage && (
+            <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-2.5 text-xs text-red-700 font-bold animate-in fade-in zoom-in-95 duration-150 shadow-xs">
+              <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+              <span>{errorMessage}</span>
             </div>
-          </div>
+          )}
 
-          {/* Password with Forgot? link */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-black text-slate-700">
-                Login Password
+          {/* Main Input Form */}
+          <form onSubmit={handleSubmit} className="space-y-3.5 pt-0.5">
+            {/* Email Address */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-700 flex items-center justify-between">
+                <span>Official Email Address</span>
               </label>
-              <button
-                type="button"
-                onClick={handleFillSuperAdmin}
-                className="text-xs font-bold text-purple-600 hover:text-purple-800 transition cursor-pointer"
-              >
-                Auto-fill Admin?
-              </button>
+              <div className="relative">
+                <Mail className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
+                  isFocused === 'email' ? 'text-purple-600' : 'text-slate-400'
+                }`} />
+                <input
+                  type="email"
+                  value={email}
+                  onFocus={(e) => handleInputFocus('email', e)}
+                  onBlur={() => setIsFocused(null)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. executive@igloobd.com"
+                  required
+                  className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs"
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                isFocused === 'password' ? 'text-purple-600' : 'text-slate-400'
-              }`} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onFocus={(e) => handleInputFocus('password', e)}
-                onBlur={() => setIsFocused(null)}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your secure password"
-                required
-                className="w-full pl-10 pr-11 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs font-sans"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition"
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
 
-          {/* Sign In Button with Gradient & Glow */}
-          <div className="pt-2">
+            {/* Password with Forgot? link */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-black text-slate-700">
+                  Login Password
+                </label>
+                <button
+                  type="button"
+                  onClick={handleFillSuperAdmin}
+                  className="text-xs font-bold text-purple-600 hover:text-purple-800 transition cursor-pointer"
+                >
+                  Auto-fill Admin?
+                </button>
+              </div>
+              <div className="relative">
+                <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
+                  isFocused === 'password' ? 'text-purple-600' : 'text-slate-400'
+                }`} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onFocus={(e) => handleInputFocus('password', e)}
+                  onBlur={() => setIsFocused(null)}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your secure password"
+                  required
+                  className="w-full pl-10 pr-11 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs font-sans"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Sign In Button with Gradient & Glow */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3.5 sm:py-4 px-5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-purple-600/30 transition-all duration-200 active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-75 relative overflow-hidden group"
+              >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Sign in to Igloo AI</span>
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+
+          {/* Quick Autofill Badge Card */}
+          <div className="pt-1">
             <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-4 px-5 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-purple-600/30 transition-all duration-200 active:scale-[0.98] flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-75 relative overflow-hidden group"
+              type="button"
+              onClick={handleFillSuperAdmin}
+              className="w-full py-2.5 px-3.5 bg-purple-50/80 hover:bg-purple-100/90 border border-purple-200/80 rounded-2xl text-purple-900 transition flex items-center justify-between text-xs font-bold cursor-pointer group shadow-2xs"
             >
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none" />
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <span>Sign in to Igloo AI</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                </>
-              )}
+              <div className="flex items-center space-x-2">
+                <div className="p-1 rounded-lg bg-purple-200/80 text-purple-700 group-hover:scale-105 transition-transform">
+                  <Shield className="w-3.5 h-3.5" />
+                </div>
+                <div className="text-left">
+                  <span className="block text-[11px] font-black text-purple-950 leading-tight">Super Admin Autofill</span>
+                  <span className="block text-[10px] text-purple-700 font-mono">fapolok7@gmail.com</span>
+                </div>
+              </div>
+              <span className="text-[10px] uppercase font-black bg-purple-600 text-white px-2.5 py-1 rounded-xl shadow-xs group-hover:bg-purple-700 transition">
+                Tap
+              </span>
             </button>
           </div>
-        </form>
 
-        {/* Quick Autofill Badge Card */}
-        <div className="pt-1">
-          <button
-            type="button"
-            onClick={handleFillSuperAdmin}
-            className="w-full py-2.5 px-3.5 bg-purple-50/80 hover:bg-purple-100/90 border border-purple-200/80 rounded-2xl text-purple-900 transition flex items-center justify-between text-xs font-bold cursor-pointer group shadow-2xs"
-          >
-            <div className="flex items-center space-x-2">
-              <div className="p-1 rounded-lg bg-purple-200/80 text-purple-700 group-hover:scale-105 transition-transform">
-                <Shield className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-left">
-                <span className="block text-[11px] font-black text-purple-950 leading-tight">Super Admin Autofill</span>
-                <span className="block text-[10px] text-purple-700 font-mono">fapolok7@gmail.com</span>
-              </div>
-            </div>
-            <span className="text-[10px] uppercase font-black bg-purple-600 text-white px-2.5 py-1 rounded-xl shadow-xs group-hover:bg-purple-700 transition">
-              Tap
-            </span>
-          </button>
-        </div>
-
-        {/* Footer info: Developed by Fa Polok */}
-        <div className="text-center text-xs text-slate-400 pt-2 font-medium flex items-center justify-center space-x-2">
-          <span>© 2026 Abdul Monem Ltd.</span>
-          <span>•</span>
-          <span>Developed by Fa Polok</span>
+          {/* Footer info: Developed by Fa Polok */}
+          <div className="text-center text-xs text-slate-400 pt-2 font-medium flex items-center justify-center space-x-2">
+            <span>© 2026 Abdul Monem Ltd.</span>
+            <span>•</span>
+            <span>Developed by Fa Polok</span>
+          </div>
         </div>
       </div>
     </div>
