@@ -7,12 +7,14 @@ import {
   Copy,
   Check,
   Edit3,
-  Globe
+  Globe,
+  ClipboardPaste
 } from 'lucide-react';
 import { GeneratedReply } from '../services/localEngine';
 import { requestReply, copyTextToClipboard } from '../services/replyService';
 import { sounds } from '../utils/audio';
 import { CustomEditView } from './CustomEditView';
+import { getTimeBasedGreeting } from '../utils/timeGreeting';
 
 interface ReplyGeneratorProps {
   initialQuery?: string;
@@ -28,6 +30,20 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   const [isEditingFullPage, setIsEditingFullPage] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const greetingInfo = getTimeBasedGreeting();
+
+  // Auto-resize textarea to fit message height completely without any scrolling
+  const autoResizeTextarea = () => {
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      const newHeight = Math.max(105, inputRef.current.scrollHeight);
+      inputRef.current.style.height = `${newHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [inputMessage]);
 
   useEffect(() => {
     if (initialQuery) {
@@ -39,6 +55,27 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 2500);
+  };
+
+  const handlePasteClipboard = async () => {
+    sounds.playTap();
+    try {
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          setInputMessage(text.trim());
+          showToast('Pasted from clipboard!');
+          sounds.playSuccess();
+          setTimeout(() => autoResizeTextarea(), 50);
+          return;
+        }
+      }
+      showToast('Please paste directly with Ctrl+V');
+      inputRef.current?.focus();
+    } catch (err) {
+      showToast('Clipboard access not allowed. Please paste manually');
+      inputRef.current?.focus();
+    }
   };
 
   const handleGenerate = async (messageOverride?: string) => {
@@ -161,34 +198,74 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
         </div>
       )}
 
-      {/* Customer Message Input Card */}
+      {/* Dynamic Time Greeting Banner */}
+      <div className="bg-gradient-to-r from-purple-700/10 via-indigo-700/5 to-purple-700/10 rounded-3xl p-3.5 sm:p-4 border border-purple-200/70 shadow-xs flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-md shadow-purple-600/20 flex-shrink-0">
+            {greetingInfo.icon}
+          </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-1.5">
+              <span>{greetingInfo.greeting}!</span>
+              <span className="text-xs font-bold text-purple-700">({greetingInfo.greetingBn})</span>
+            </h2>
+            <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
+              Igloo Customer Support Intelligence • Ready to generate replies
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Customer Message Input Card - Auto-resizing so NO scrolling is required */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-md relative focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-400 transition-all">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2.5">
           <label className="text-xs sm:text-sm font-extrabold text-slate-800 flex items-center space-x-1.5">
             <span>Customer Message / Query (কাস্টমারের প্রশ্ন):</span>
           </label>
 
-          {inputMessage && (
+          <div className="flex items-center space-x-2">
+            {/* Quick 1-Tap Paste Button */}
             <button
-              onClick={() => {
-                sounds.playTap();
-                setInputMessage('');
-              }}
-              className="text-slate-400 hover:text-purple-600 p-1 rounded-lg transition active:scale-90 cursor-pointer text-xs font-bold flex items-center space-x-1"
-              title="Clear input"
+              type="button"
+              onClick={handlePasteClipboard}
+              className="text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-xl transition active:scale-95 cursor-pointer text-xs font-bold flex items-center space-x-1 border border-purple-200/80 shadow-2xs"
+              title="Paste from clipboard"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear</span>
+              <ClipboardPaste className="w-3.5 h-3.5" />
+              <span>Paste</span>
             </button>
-          )}
+
+            {inputMessage && (
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playTap();
+                  setInputMessage('');
+                  if (inputRef.current) {
+                    inputRef.current.style.height = '105px';
+                  }
+                }}
+                className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-2.5 py-1 rounded-xl transition active:scale-90 cursor-pointer text-xs font-bold flex items-center space-x-1"
+                title="Clear input"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Textarea */}
+        {/* Textarea - Auto-expanding and overflow-hidden so NO scrollbar is ever required */}
         <div className="relative">
           <textarea
             ref={inputRef}
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            onChange={(e) => {
+              setInputMessage(e.target.value);
+              // Immediate auto-resize without lag
+              e.target.style.height = 'auto';
+              e.target.style.height = `${Math.max(105, e.target.scrollHeight)}px`;
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                 handleGenerate();
@@ -196,12 +273,16 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
             }}
             placeholder="Type or paste any customer inquiry (e.g., 'Dhanmondi delivery hobe?', 'Chocbar price?', 'What special flavors for birthday?', 'Freezer lagbe dokane')..."
             rows={3}
-            className="w-full p-3.5 bg-slate-50/90 border border-slate-200/80 rounded-2xl text-sm leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-purple-500 transition resize-none font-sans"
+            className="w-full p-4 bg-slate-50/90 border border-slate-200/80 rounded-2xl text-sm sm:text-base leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-purple-500 transition-all resize-none font-sans overflow-hidden min-h-[105px]"
           />
         </div>
 
         {/* Bottom Actions inside Input Box */}
-        <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-slate-100">
+        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100">
+          <span className="text-[11px] text-slate-400 hidden sm:inline">
+            Press <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[10px] font-mono">Ctrl + Enter</kbd> to generate
+          </span>
+
           {/* Modern Purple Generate Button */}
           <button
             onClick={() => handleGenerate()}

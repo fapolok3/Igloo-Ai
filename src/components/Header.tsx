@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Smartphone, Monitor, Download, Sparkles, LogOut, Shield, User } from 'lucide-react';
+import { Smartphone, Monitor, Download, LogOut, Shield, User } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { UserAccount } from '../types/auth';
+import { getTimeBasedGreeting } from '../utils/timeGreeting';
 
 interface HeaderProps {
   isMobileFrame: boolean;
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout
 }) => {
   const [logoLoaded, setLogoLoaded] = useState(true);
+  const greetingInfo = getTimeBasedGreeting();
 
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,18 +53,17 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             <div className="flex flex-col">
-              {/* Title */}
+              {/* Title with Clean AI Tag */}
               <div className="flex items-center space-x-1.5">
                 <span className="font-black text-xl sm:text-2xl tracking-tight text-white drop-shadow-md font-sans">
                   Igloo
                 </span>
-                <span className="text-xs font-extrabold uppercase px-2 py-0.5 rounded-lg bg-white/20 text-purple-100 backdrop-blur-md border border-white/25 shadow-2xs tracking-wider flex items-center space-x-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
-                  <span>AI</span>
+                <span className="text-xs font-black uppercase px-2 py-0.5 rounded-lg bg-white/20 text-purple-100 backdrop-blur-md border border-white/25 shadow-2xs tracking-wider">
+                  AI
                 </span>
               </div>
 
-              {/* User Profile Badge */}
+              {/* User Profile Badge with Dynamic System Greeting */}
               {currentUser && (
                 <div className="flex items-center space-x-1.5 mt-0.5">
                   <span className="text-[10px] font-bold text-purple-100 flex items-center space-x-1 bg-black/20 px-2 py-0.5 rounded-md">
@@ -71,7 +72,8 @@ export const Header: React.FC<HeaderProps> = ({
                     ) : (
                       <User className="w-3 h-3 text-white" />
                     )}
-                    <span className="truncate max-w-[120px]">{currentUser.name}</span>
+                    <span className="hidden sm:inline text-purple-200 font-semibold">{greetingInfo.greeting},</span>
+                    <span className="truncate max-w-[110px]">{currentUser.name}</span>
                     <span className="text-[9px] text-amber-300 font-extrabold uppercase">
                       ({currentUser.role === 'super_admin' ? 'Super Admin' : 'User'})
                     </span>
