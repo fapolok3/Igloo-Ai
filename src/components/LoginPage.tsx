@@ -27,6 +27,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
   const greetingInfo = getTimeBasedGreeting();
 
+  const handleInputFocus = (field: 'email' | 'password', e: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(field);
+    // Smoothly scroll the focused input into center view after the mobile virtual keyboard pops up
+    const target = e.target;
+    setTimeout(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 280);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -64,7 +73,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#13072b] flex flex-col justify-between selection:bg-purple-500 selection:text-white relative overflow-hidden font-sans">
+    <div className="min-h-[100dvh] bg-[#13072b] flex flex-col justify-between selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
       {/* Dynamic Animated Ambient Background Glow Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Soft Radial Neon Halos */}
@@ -102,12 +111,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </svg>
       </div>
 
-      {/* Top Header & Branding Section */}
-      <div className="relative z-10 px-6 pt-12 pb-6 max-w-md w-full mx-auto flex flex-col justify-between">
+      {/* Top Header & Branding Section - Compact on mobile to leave ample room for keyboard */}
+      <div className="relative z-10 px-6 pt-6 sm:pt-10 pb-3 sm:pb-5 max-w-md w-full mx-auto flex flex-col justify-between">
         {/* Brand Bar */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-xl shadow-purple-950/50 border-2 border-purple-400/40 relative group overflow-hidden">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-xl shadow-purple-950/50 border-2 border-purple-400/40 relative group overflow-hidden flex-shrink-0">
               <img
                 src="https://igloobd.com/default/assets/img/about/about1.jpg"
                 alt="Igloo Logo"
@@ -121,41 +130,41 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             <div>
               <div className="flex items-center space-x-1.5">
-                <span className="text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
+                <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
                   Igloo
                 </span>
                 {/* Clean "AI" tag without icon */}
-                <span className="text-[11px] font-black uppercase px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/20 tracking-wider">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/20 tracking-wider">
                   AI
                 </span>
               </div>
-              <p className="text-[11px] text-purple-200/80 font-semibold tracking-wide">
+              <p className="text-[10px] sm:text-[11px] text-purple-200/80 font-semibold tracking-wide">
                 Customer Support Intelligence
               </p>
             </div>
           </div>
 
           {/* Version Pill */}
-          <div className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
+          <div className="px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>V2.0.1</span>
           </div>
         </div>
 
         {/* Dynamic Time-Based Greeting Typography */}
-        <div className="mt-8 space-y-1.5">
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center space-x-2">
+        <div className="mt-4 sm:mt-6 space-y-1">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
             <span>{greetingInfo.greeting}</span>
-            <span className="text-xl">{greetingInfo.icon}</span>
+            <span className="text-lg sm:text-xl">{greetingInfo.icon}</span>
           </h2>
-          <p className="text-xs sm:text-sm text-purple-200/90 font-medium">
+          <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium">
             Sign in to access corporate replies, live catalog & FAQs
           </p>
         </div>
       </div>
 
       {/* Modern Glass Bottom Card Container */}
-      <div className="relative z-10 w-full bg-white rounded-t-[38px] px-6 sm:px-8 pt-5 pb-8 max-w-md mx-auto shadow-2xl shadow-purple-950/40 border-t border-purple-100/80 space-y-4">
+      <div className="relative z-10 w-full bg-white rounded-t-[32px] sm:rounded-t-[38px] px-5 sm:px-8 pt-4 sm:pt-5 pb-10 sm:pb-8 max-w-md mx-auto shadow-2xl shadow-purple-950/40 border-t border-purple-100/80 space-y-4">
         {/* Top Handle / Pull Indicator Bar */}
         <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto" />
 
@@ -168,7 +177,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         )}
 
         {/* Main Input Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+        <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
           {/* Email Address */}
           <div className="space-y-1.5">
             <label className="text-xs font-black text-slate-700 flex items-center justify-between">
@@ -181,12 +190,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <input
                 type="email"
                 value={email}
-                onFocus={() => setIsFocused('email')}
+                onFocus={(e) => handleInputFocus('email', e)}
                 onBlur={() => setIsFocused(null)}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g. executive@igloobd.com"
                 required
-                className="w-full pl-10 pr-4 py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs"
+                className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs"
               />
             </div>
           </div>
@@ -212,12 +221,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onFocus={() => setIsFocused('password')}
+                onFocus={(e) => handleInputFocus('password', e)}
                 onBlur={() => setIsFocused(null)}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Your secure password"
                 required
-                className="w-full pl-10 pr-11 py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs font-sans"
+                className="w-full pl-10 pr-11 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs font-sans"
               />
               <button
                 type="button"
