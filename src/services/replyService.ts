@@ -41,7 +41,7 @@ export async function requestReply(message: string, forceLocal = false): Promise
     const res = await fetch('/api/generate-reply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: trimmed }),
+      body: JSON.stringify({ message: trimmed, prompt: trimmed }),
       signal: controller.signal
     });
 

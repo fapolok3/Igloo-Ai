@@ -30,11 +30,17 @@ git push -u origin main
 
 ---
 
-### 3. Set Environment Variables (Optional):
-Under **Environment Variables** in Vercel settings, add:
-- `GEMINI_API_KEY`: *(Your Google AI Gemini API Key)*
+### 3. Set Environment Variables (Required for Gemini AI Live):
+Because `.env` files are ignored by Git for security, you MUST add your Gemini API Key in Vercel:
+1. In your Vercel Project, go to **Settings** > **Environment Variables**.
+2. Add a new variable:
+   - **Key:** `GEMINI_API_KEY`
+   - **Value:** `YOUR_GOOGLE_AI_STUDIO_GEMINI_API_KEY`
+   - **Environments:** Check *Production*, *Preview*, and *Development*.
+3. Click **Save**.
+4. Go to **Deployments** > click the `...` menu on your latest deployment > click **Redeploy** (or simply git push a new commit) to activate the key on your live site!
 
-*(Note: Even without an API Key, the application automatically runs on its high-performance offline local engine with 100% uptime!)*
+*(Note: If no API Key is set in Vercel, the application safely uses its instant offline Knowledge Base engine without crashing).*
 
 ---
 

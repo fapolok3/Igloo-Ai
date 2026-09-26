@@ -626,9 +626,9 @@ app.get('/api/products', (req, res) => {
 
 // API Route: Generate AI Reply with Grounded Fallback
 app.post('/api/generate-reply', async (req, res) => {
-  const { message } = req.body;
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ error: 'Message is required' });
+  const message = (req.body?.message || req.body?.prompt || '').toString().trim();
+  if (!message) {
+    return res.status(400).json({ error: 'Message or prompt is required' });
   }
 
   try {
