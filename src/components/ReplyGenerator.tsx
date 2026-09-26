@@ -8,7 +8,8 @@ import {
   Check,
   Edit3,
   Globe,
-  ClipboardPaste
+  ClipboardPaste,
+  Sparkles
 } from 'lucide-react';
 import { GeneratedReply } from '../services/localEngine';
 import { requestReply, copyTextToClipboard } from '../services/replyService';
@@ -309,10 +310,17 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
           <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-purple-500/20 shadow-xl relative overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-slate-100">
               <div className="flex items-center space-x-2">
-                <span className="flex items-center space-x-1 bg-emerald-100 text-emerald-800 font-bold text-xs px-2.5 py-1 rounded-full border border-emerald-300">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Approved Script</span>
-                </span>
+                {currentResult.source === 'gemini' ? (
+                  <span className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 font-bold text-xs px-2.5 py-1 rounded-full border border-purple-200/80 shadow-2xs">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Gemini AI Smart Reply</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 font-bold text-xs px-2.5 py-1 rounded-full border border-emerald-300">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Official Knowledge Base</span>
+                  </span>
+                )}
                 <span className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-[220px] sm:max-w-xs">
                   {currentResult.matchedEntityName || 'Igloo Customer Support'}
                 </span>

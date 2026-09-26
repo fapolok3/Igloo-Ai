@@ -154,3 +154,62 @@ export function toggleUserStatusByAdmin(userId: string): { success: boolean; err
   saveUsers(users);
   return { success: true };
 }
+
+export function updateUserByAdmin(
+  userId: string,
+  data: {
+    name: string;
+    email: string;
+    password: string;
+    role?: 'user' | 'super_admin';
+  }
+): { success: boolean; user?: UserAccount; error?: string } {
+  const cleanName = data.name.trim();
+  const cleanEmail = data.email.trim().toLowerCase();
+  const cleanPass = data.password.trim();
+
+  if (!cleanName || !cleanEmail || !cleanPass) {
+    return { success: false, error: 'Name, email, and password are required.' };
+  }
+
+  if (cleanPass.length < 6) {
+    return { success: false, error: 'Password must be at least 6 characters long.' };
+  }
+
+  const users = getStoredUsers();
+  const target = users.find((u) => u.id === userId);
+  if (!target) {
+    return { success: false, error: 'User account not found.' };
+  }
+
+  // Check if email changed and if new email already belongs to another user
+  if (cleanEmail !== target.email.toLowerCase()) {
+    const emailConflict = users.find((u) => u.id !== userId && u.email.toLowerCase() === cleanEmail);
+    if (emailConflict) {
+      return { success: false, error: 'This email is already in use by another account.' };
+    }
+  }
+
+  // If editing primary super admin, ensure it doesn't get demoted to regular user
+  if (target.email.toLowerCase() === SUPER_ADMIN_CREDENTIAL.email.toLowerCase() && data.role === 'user') {
+    return { success: false, error: 'Primary Super Admin account role cannot be changed to user.' };
+  }
+
+  target.name = cleanName;
+  target.email = cleanEmail;
+  target.password = cleanPass;
+  if (data.role) {
+    target.role = data.role;
+  }
+
+  saveUsers(users);
+
+  // If the edited user is currently logged in, update active session
+  const current = getCurrentUser();
+  if (current && current.id === userId) {
+    setCurrentUser(target);
+  }
+
+  return { success: true, user: target };
+}
+

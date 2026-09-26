@@ -12,11 +12,15 @@ import {
   Eye,
   EyeOff,
   UserCheck,
-  UserX
+  UserX,
+  Pencil,
+  X,
+  Save
 } from 'lucide-react';
 import {
   getStoredUsers,
   createUserByAdmin,
+  updateUserByAdmin,
   deleteUserByAdmin,
   toggleUserStatusByAdmin
 } from '../services/authService';
@@ -35,6 +39,15 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   const [role, setRole] = useState<'user' | 'super_admin'>('user');
   const [showPassword, setShowPassword] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Edit User State
+  const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
+  const [editRole, setEditRole] = useState<'user' | 'super_admin'>('user');
+  const [editShowPassword, setEditShowPassword] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const loadUsers = () => {
     setUsers(getStoredUsers());
@@ -61,6 +74,55 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     } else {
       sounds.playError();
       setStatusMsg({ type: 'error', text: res.error || 'Failed to create user.' });
+    }
+  };
+
+  const handleOpenEditModal = (user: UserAccount) => {
+    sounds.playTap();
+    setEditingUser(user);
+    setEditName(user.name);
+    setEditEmail(user.email);
+    setEditPassword(user.password || '');
+    setEditRole(user.role);
+    setEditShowPassword(false);
+  };
+
+  const handleCloseEditModal = () => {
+    sounds.playTap();
+    setEditingUser(null);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    setIsUpdating(true);
+    sounds.playTap();
+
+    const res = updateUserByAdmin(editingUser.id, {
+      name: editName,
+      email: editEmail,
+      password: editPassword,
+      role: editRole
+    });
+
+    setIsUpdating(false);
+
+    if (res.success) {
+      sounds.playSuccess();
+      setStatusMsg({
+        type: 'success',
+        text: `Account "${editName}" (${editEmail}) updated successfully!`
+      });
+      setEditingUser(null);
+      loadUsers();
+      setTimeout(() => setStatusMsg(null), 3500);
+    } else {
+      sounds.playError();
+      setStatusMsg({
+        type: 'error',
+        text: res.error || 'Failed to update user account.'
+      });
     }
   };
 
@@ -302,44 +364,192 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
                 </div>
 
                 {/* Actions */}
-                {!isSelf && usr.email !== SUPER_ADMIN_CREDENTIAL.email && (
-                  <div className="flex items-center space-x-2 self-end sm:self-center">
-                    <button
-                      onClick={() => handleToggleStatus(usr)}
-                      className={`p-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer ${
-                        usr.status === 'active'
-                          ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
-                          : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      }`}
-                      title={usr.status === 'active' ? 'Disable Account' : 'Activate Account'}
-                    >
-                      {usr.status === 'active' ? (
-                        <>
-                          <UserX className="w-3.5 h-3.5" />
-                          <span className="text-[11px]">Disable</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserCheck className="w-3.5 h-3.5" />
-                          <span className="text-[11px]">Activate</span>
-                        </>
-                      )}
-                    </button>
+                <div className="flex items-center space-x-1.5 self-end sm:self-center">
+                  {/* Edit Button for Super Admin - Available for EVERY user */}
+                  <button
+                    onClick={() => handleOpenEditModal(usr)}
+                    className="p-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 transition flex items-center space-x-1 cursor-pointer font-bold shadow-2xs"
+                    title="Edit Name, Email & Password"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span className="text-[11px]">Edit</span>
+                  </button>
 
-                    <button
-                      onClick={() => handleDeleteUser(usr)}
-                      className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
-                      title="Delete user"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
+                  {!isSelf && usr.email.toLowerCase() !== SUPER_ADMIN_CREDENTIAL.email.toLowerCase() && (
+                    <>
+                      <button
+                        onClick={() => handleToggleStatus(usr)}
+                        className={`p-2 rounded-xl text-xs font-bold transition flex items-center space-x-1 cursor-pointer ${
+                          usr.status === 'active'
+                            ? 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+                            : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                        }`}
+                        title={usr.status === 'active' ? 'Disable Account' : 'Activate Account'}
+                      >
+                        {usr.status === 'active' ? (
+                          <>
+                            <UserX className="w-3.5 h-3.5" />
+                            <span className="text-[11px] hidden sm:inline">Disable</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span className="text-[11px] hidden sm:inline">Activate</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteUser(usr)}
+                        className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 transition cursor-pointer"
+                        title="Delete user"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 w-full max-w-md shadow-2xl border border-slate-200/90 space-y-4 relative animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl border border-purple-100">
+                  <Pencil className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-slate-900">
+                    Edit User Account
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Modify credentials for {editingUser.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveEdit} className="space-y-3.5">
+              {/* Name */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Full Name</label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    required
+                    placeholder="User full name"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Email */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Official Email</label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    required
+                    placeholder="User official email"
+                    className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1 flex items-center justify-between">
+                  <span>Login Password</span>
+                  <span className="text-[10px] text-purple-600 font-semibold">Super Admin Override</span>
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type={editShowPassword ? 'text' : 'password'}
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    required
+                    placeholder="New password (min 6 characters)"
+                    className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEditShowPassword(!editShowPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {editShowPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Role */}
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700 ml-1">Assigned Role</label>
+                <select
+                  value={editRole}
+                  disabled={editingUser.email.toLowerCase() === SUPER_ADMIN_CREDENTIAL.email.toLowerCase()}
+                  onChange={(e) => setEditRole(e.target.value as any)}
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition font-medium disabled:opacity-60"
+                >
+                  <option value="user">Support Executive (User)</option>
+                  <option value="super_admin">Super Administrator</option>
+                </select>
+                {editingUser.email.toLowerCase() === SUPER_ADMIN_CREDENTIAL.email.toLowerCase() && (
+                  <p className="text-[10px] text-amber-600 font-medium ml-1">
+                    Primary Super Admin role cannot be demoted.
+                  </p>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="px-4 py-2.5 rounded-2xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-xs font-black shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center space-x-1.5 cursor-pointer disabled:opacity-60"
+                >
+                  {isUpdating ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

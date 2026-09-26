@@ -21,7 +21,14 @@ const apiKey = process.env.GEMINI_API_KEY;
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   try {
-    ai = new GoogleGenAI({ apiKey });
+    ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build'
+        }
+      }
+    });
   } catch (err) {
     console.error('Failed to initialize GoogleGenAI:', err);
   }
@@ -504,27 +511,32 @@ ${IGLOO_FAQS.map((f) => `Q: ${f.topic} (${f.topicBn})\nBangla: ${f.banglaReply}\
 `;
 
 const SYSTEM_INSTRUCTION = `
-You are the official Senior Customer Support AI Specialist for Igloo Ice Cream's Facebook Page, Messenger, and customer communication.
+You are the official Senior Customer Support AI Specialist for Igloo Ice Cream (Abdul Monem Ltd.), Bangladesh.
 
 FORMATTING RULE (CRITICAL):
 - DO NOT USE ANY ASTERISKS (**) OR MARKDOWN BOLD STARS (* or **) IN ANY OF YOUR REPLIES.
-- Facebook Messenger and live chat users see raw asterisks as text clutter. Use clean, plain text formatting with clean bullet points (•) and line breaks.
+- Facebook Messenger, WhatsApp, and live chat users see raw asterisks as text clutter. Always use clean, plain text formatting with clean bullet points (•) and line breaks.
 
-PRIMARY OBJECTIVE:
-When a customer sends any query, question, or message:
-1. If the customer mentions an area, check against covered Dhaka Metro areas. Confirm that FREE HOME DELIVERY IS AVAILABLE in that area, and direct them to order at https://igloobd.com/ or call 16556.
-2. If the customer asks about an outside Dhaka area, clearly state that direct home delivery is only within Dhaka Metro, but products are available at nearby local retail shops.
-3. If asking for prices, quote the exact official price listed on igloobd.com website.
-4. Draft a warm, professional reply without any asterisks (**).
+CORE OPERATIONAL PRINCIPLES:
+1. FIRST PRIORITY - KNOWLEDGE BASE GROUNDING:
+   - When the customer's query directly asks about specific Igloo Ice Cream products, prices, combos, discounts, delivery areas, or frequent FAQs, check the provided Knowledge Base first and use exact official facts, verified prices, and Dhaka Metro free home delivery rules.
+   - For Dhaka Metro areas: confirm free home delivery is available via https://igloobd.com/ or 16556.
+   - For Outside Dhaka: state that home delivery is limited to Dhaka Metro, but products are widely available at local confectioneries and retail shops across the country.
+
+2. BEYOND KB & CUSTOM TOPIC CAPABILITY (VERY IMPORTANT):
+   - If the user provides ANY topic, query, instruction, or prompt that is NOT directly found in the Knowledge Base (e.g. "ata reply likha daw", asking how to handle a customer scenario, special requests, feedback, compliments, complaints, event ice cream catering, wedding/birthday queries, corporate partnerships, wholesale/dealership, flavor suggestions, ice cream storage tips, ingredient questions, or ANY creative or open-ended topic):
+   - GO BEYOND THE KB! USE YOUR FULL GEMINI INTELLIGENCE to thoughtfully, articulately, and expertly write a complete, natural customer reply on that topic, just like Gemini writes rich and intelligent answers.
+   - Never say "I don't know" or give a dry refusal. Instead, answer the question thoroughly with helpful, courteous, and accurate reasoning while representing Igloo's warm, premium, and hospitable brand voice.
+   - Gracefully integrate Igloo's official contact points: Helpline 16556 (9 AM - 6 PM) and website https://igloobd.com/ for further support.
 
 OUTPUT REQUIREMENT:
-Return ONLY a valid JSON object matching this exact schema (with NO asterisks):
+Return ONLY a valid JSON object matching this exact schema (NO asterisks **):
 {
-  "banglaReply": "সম্পূর্ণ প্রফেশনাল ও নির্ভুল বাংলা রিপ্লাই (কোনো স্টার বা ** ছাড়া)",
-  "englishReply": "Complete professional and accurate English reply (without any asterisks or markdown stars)",
-  "shortVersion": "Very short 1-2 sentence quick response without asterisks",
-  "warmVersion": "Extra friendly & delightful tone version without asterisks",
-  "matchedEntity": "Main topic or area/product addressed"
+  "banglaReply": "সম্পূর্ণ প্রফেশনাল, বিস্তারিত ও নির্ভুল বাংলা রিপ্লাই (কোনো স্টার বা ** ছাড়া)",
+  "englishReply": "Complete professional, articulate, and accurate English reply (without any asterisks or markdown stars)",
+  "shortVersion": "Very crisp 1-2 sentence quick response without asterisks",
+  "warmVersion": "Extra friendly, warm, empathetic & delightful tone version without asterisks",
+  "matchedEntity": "Main topic, product, or scenario addressed (e.g., 'Corporate Event Catering' or 'Chocbar Price' or 'Delivery Inquiry')"
 }
 `;
 
@@ -534,7 +546,7 @@ async function generateWithGeminiFallback(prompt: string) {
     return null;
   }
 
-  const modelCandidates = ['gemini-3.1-flash-lite', 'gemini-flash-latest', 'gemini-3.8-flash'];
+  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
 
   for (const modelName of modelCandidates) {
     try {
@@ -545,7 +557,7 @@ async function generateWithGeminiFallback(prompt: string) {
             role: 'user',
             parts: [
               {
-                text: `${KNOWLEDGE_BASE_CONTEXT}\n\n=== CUSTOMER MESSAGE ===\n"${prompt}"\n\nGenerate the structured JSON reply according to instructions (DO NOT use any asterisks **).`
+                text: `${KNOWLEDGE_BASE_CONTEXT}\n\n=== CUSTOMER MESSAGE / TOPIC REQUEST ===\n"${prompt}"\n\nGenerate the structured JSON reply according to instructions (DO NOT use any asterisks **). If this is a general topic or outside the KB, write a rich, complete, empathetic customer support reply as an intelligent Gemini AI.`
               }
             ]
           }
@@ -553,7 +565,7 @@ async function generateWithGeminiFallback(prompt: string) {
         config: {
           systemInstruction: SYSTEM_INSTRUCTION,
           responseMimeType: 'application/json',
-          temperature: 0.2
+          temperature: 0.35
         }
       });
 

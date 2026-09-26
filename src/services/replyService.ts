@@ -36,7 +36,7 @@ export async function requestReply(message: string, forceLocal = false): Promise
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500); // Fast fallback if server/gemini is slow
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // Allow sufficient time for Gemini to generate comprehensive replies
 
     const res = await fetch('/api/generate-reply', {
       method: 'POST',
