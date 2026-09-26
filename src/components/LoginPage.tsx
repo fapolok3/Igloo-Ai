@@ -73,52 +73,52 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-[#13072b] flex flex-col justify-start sm:justify-center items-center px-4 py-3 sm:py-8 selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[#13072b] via-[#1a0a38] to-[#0f051d] flex flex-col justify-center items-center px-4 py-6 selection:bg-purple-500 selection:text-white relative overflow-y-auto overflow-x-hidden font-sans">
       {/* Dynamic Animated Ambient Background Glow Gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         {/* Soft Radial Neon Halos */}
-        <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-600/35 rounded-full blur-[100px] animate-pulse" />
-        <div className="absolute top-1/4 -right-24 w-80 h-80 bg-indigo-600/30 rounded-full blur-[90px]" />
-        <div className="absolute -bottom-20 left-1/3 w-96 h-96 bg-fuchsia-600/25 rounded-full blur-[110px]" />
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-purple-600/30 rounded-full blur-[110px] animate-pulse" />
+        <div className="absolute top-1/3 -right-24 w-80 h-80 bg-indigo-600/25 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-24 left-1/4 w-96 h-96 bg-fuchsia-600/20 rounded-full blur-[120px]" />
 
-        {/* Decorative Grid Lines */}
+        {/* Decorative Grid Texture */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.035]"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, white 1px, transparent 0)`,
-            backgroundSize: '28px 28px'
+            backgroundSize: '24px 24px'
           }}
         />
 
-        {/* Dynamic Curved Vector Lines */}
+        {/* Ambient Curved Vector Accent Lines */}
         <svg
-          className="absolute top-0 left-0 w-full h-[380px] text-white/[0.07]"
+          className="absolute top-0 left-0 w-full h-[400px] text-purple-400/[0.08]"
           viewBox="0 0 1000 400"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d="M-100,120 C200,40 400,280 700,90 C900,-30 1050,160 1150,220"
+            d="M-100,100 C200,30 400,260 700,80 C900,-20 1050,150 1150,210"
             stroke="currentColor"
             strokeWidth="2"
             strokeDasharray="6 6"
           />
           <path
-            d="M-50,260 C250,140 500,360 850,160 C1000,80 1100,200 1200,280"
+            d="M-50,240 C250,130 500,340 850,150 C1000,70 1100,190 1200,270"
             stroke="currentColor"
             strokeWidth="1.5"
           />
         </svg>
       </div>
 
-      {/* Main Unified Container - Positioned at top on mobile, centered on desktop */}
-      <div className="relative z-10 w-full max-w-md mx-auto flex flex-col space-y-3 sm:space-y-4 pb-28 sm:pb-6 pt-1 sm:pt-4">
-        {/* Top Header & Branding Section */}
-        <div className="px-1 sm:px-2 space-y-2">
-          {/* Brand Bar */}
-          <div className="flex items-center justify-between">
+      {/* Main Unified Card Container - Perfectly centered in the middle */}
+      <div className="relative z-10 w-full max-w-md mx-auto my-auto py-2">
+        {/* Luxe White Glass Card */}
+        <div className="w-full bg-white/95 backdrop-blur-xl rounded-[32px] px-5 sm:px-7 py-6 sm:py-7 shadow-[0_25px_60px_-15px_rgba(76,29,149,0.45)] border border-white/80 space-y-4">
+          {/* Card Top Branding Bar */}
+          <div className="flex items-center justify-between pb-1">
             <div className="flex items-center space-x-3">
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-xl shadow-purple-950/50 border-2 border-purple-400/40 relative group overflow-hidden flex-shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center shadow-md shadow-purple-950/15 border-2 border-purple-200/90 relative group overflow-hidden flex-shrink-0">
                 <img
                   src="https://igloobd.com/default/assets/img/about/about1.jpg"
                   alt="Igloo Logo"
@@ -127,46 +127,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                     (e.target as HTMLElement).style.display = 'none';
                   }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/20 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-purple-600/15 to-transparent pointer-events-none" />
               </div>
 
               <div>
                 <div className="flex items-center space-x-1.5">
-                  <span className="text-xl sm:text-2xl font-black text-white tracking-tight drop-shadow-sm font-sans">
+                  <span className="text-xl font-black text-slate-900 tracking-tight font-sans">
                     Igloo
                   </span>
-                  {/* Clean "AI" tag without icon */}
-                  <span className="text-[10px] sm:text-[11px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-500 to-indigo-500 text-white border border-purple-300/30 shadow-md shadow-purple-500/20 tracking-wider">
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs tracking-wider">
                     AI
                   </span>
                 </div>
-                <p className="text-[10px] sm:text-[11px] text-purple-200/80 font-semibold tracking-wide">
+                <p className="text-[11px] text-purple-700 font-semibold tracking-tight">
                   Customer Support Intelligence
                 </p>
               </div>
             </div>
 
-            {/* Version Pill */}
-            <div className="px-2.5 sm:px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] font-extrabold text-purple-200 flex items-center space-x-1.5 shadow-inner">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            {/* Version Badge */}
+            <div className="px-2.5 py-1 rounded-full bg-purple-50 text-[10px] font-extrabold text-purple-700 border border-purple-200/80 flex items-center space-x-1.5 shadow-2xs">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>V2.0.1</span>
             </div>
           </div>
 
-          {/* Dynamic Time-Based Greeting Typography */}
-          <div className="pt-1 space-y-0.5">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center space-x-2">
-              <span>{greetingInfo.greeting}</span>
-              <span className="text-lg sm:text-xl">{greetingInfo.icon}</span>
-            </h2>
-            <p className="text-[11px] sm:text-xs text-purple-200/90 font-medium">
-              Sign in to access corporate replies, live catalog & FAQs
-            </p>
+          {/* Dynamic Time-Based Greeting Banner */}
+          <div className="bg-gradient-to-r from-purple-50 via-indigo-50/60 to-purple-50 rounded-2xl p-3 sm:p-3.5 border border-purple-200/70 shadow-2xs flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-sm shadow-purple-600/25 flex-shrink-0">
+                {greetingInfo.icon}
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-1.5 leading-tight">
+                  <span>{greetingInfo.greeting}!</span>
+                  <span className="text-xs font-bold text-purple-700">({greetingInfo.greetingBn})</span>
+                </h2>
+                <p className="text-[11px] text-slate-500 font-medium">
+                  Sign in to access corporate replies & live catalog
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Modern Solid White Card Container */}
-        <div className="w-full bg-white rounded-3xl px-5 sm:px-8 py-5 sm:py-6 shadow-2xl shadow-purple-950/60 border border-purple-100/90 space-y-4">
           {/* Error Notification Alert */}
           {errorMessage && (
             <div className="p-3.5 bg-red-50 border border-red-200 rounded-2xl flex items-start space-x-2.5 text-xs text-red-700 font-bold animate-in fade-in zoom-in-95 duration-150 shadow-xs">
@@ -183,9 +186,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <span>Official Email Address</span>
               </label>
               <div className="relative">
-                <Mail className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  isFocused === 'email' ? 'text-purple-600' : 'text-slate-400'
-                }`} />
+                <div className={`w-8 h-8 rounded-xl absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center transition-colors duration-200 ${
+                  isFocused === 'email' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  <Mail className="w-4 h-4" />
+                </div>
                 <input
                   type="email"
                   value={email}
@@ -194,7 +199,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="e.g. executive@igloobd.com"
                   required
-                  className="w-full pl-10 pr-4 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs"
+                  className="w-full pl-12 pr-4 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600/40 focus:border-purple-500 focus:bg-white transition-all shadow-xs"
                 />
               </div>
             </div>
@@ -208,15 +213,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 <button
                   type="button"
                   onClick={handleFillSuperAdmin}
-                  className="text-xs font-bold text-purple-600 hover:text-purple-800 transition cursor-pointer"
+                  className="text-[11px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded-lg border border-purple-200/80 transition cursor-pointer"
                 >
                   Auto-fill Admin?
                 </button>
               </div>
               <div className="relative">
-                <Lock className={`w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 transition-colors duration-200 ${
-                  isFocused === 'password' ? 'text-purple-600' : 'text-slate-400'
-                }`} />
+                <div className={`w-8 h-8 rounded-xl absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center transition-colors duration-200 ${
+                  isFocused === 'password' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-400'
+                }`}>
+                  <Lock className="w-4 h-4" />
+                </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -225,12 +232,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your secure password"
                   required
-                  className="w-full pl-10 pr-11 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200/90 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent focus:bg-white transition-all shadow-xs font-sans"
+                  className="w-full pl-12 pr-11 py-3 sm:py-3.5 bg-slate-50/90 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600/40 focus:border-purple-500 focus:bg-white transition-all shadow-xs font-sans"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-700 transition cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -262,14 +269,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="button"
               onClick={handleFillSuperAdmin}
-              className="w-full py-2.5 px-3.5 bg-purple-50/80 hover:bg-purple-100/90 border border-purple-200/80 rounded-2xl text-purple-900 transition flex items-center justify-between text-xs font-bold cursor-pointer group shadow-2xs"
+              className="w-full py-2.5 px-3.5 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 hover:from-purple-100 hover:to-indigo-100 border border-purple-200/90 rounded-2xl text-purple-900 transition flex items-center justify-between text-xs font-bold cursor-pointer group shadow-2xs"
             >
-              <div className="flex items-center space-x-2">
-                <div className="p-1 rounded-lg bg-purple-200/80 text-purple-700 group-hover:scale-105 transition-transform">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 rounded-xl bg-purple-200/80 text-purple-700 group-hover:scale-105 transition-transform shadow-2xs">
                   <Shield className="w-3.5 h-3.5" />
                 </div>
                 <div className="text-left">
-                  <span className="block text-[11px] font-black text-purple-950 leading-tight">Super Admin Autofill</span>
+                  <span className="block text-[11px] font-black text-purple-950 leading-tight">Super Admin One-Tap Login</span>
                   <span className="block text-[10px] text-purple-700 font-mono">fapolok7@gmail.com</span>
                 </div>
               </div>
@@ -280,7 +287,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </div>
 
           {/* Footer info: Developed by Fa Polok */}
-          <div className="text-center text-xs text-slate-400 pt-2 font-medium flex items-center justify-center space-x-2">
+          <div className="text-center text-xs text-slate-400 pt-2 font-medium flex items-center justify-center space-x-2 border-t border-slate-100">
             <span>© 2026 Abdul Monem Ltd.</span>
             <span>•</span>
             <span>Developed by Fa Polok</span>
