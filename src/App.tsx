@@ -8,7 +8,7 @@ import { SettingsUserManagement } from './components/SettingsUserManagement';
 import { LoginPage } from './components/LoginPage';
 import { getCurrentUser, logoutUser, getStoredUsers, saveUsers } from './services/authService';
 import { UserAccount } from './types/auth';
-import { syncUsersWithSupabase, syncFaqsWithSupabase } from './services/supabaseService';
+import { syncUsersWithSupabase, syncFaqsWithSupabase, getGeminiKeyFromSupabase } from './services/supabaseService';
 import { IGLOO_FAQS } from './data/knowledgeBase';
 
 export default function App() {
@@ -34,6 +34,7 @@ export default function App() {
     }).catch(() => {});
 
     syncFaqsWithSupabase(IGLOO_FAQS).catch(() => {});
+    getGeminiKeyFromSupabase().catch(() => {});
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);

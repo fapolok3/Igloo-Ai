@@ -33,6 +33,10 @@ import {
 } from '../services/authService';
 import { UserAccount, SUPER_ADMIN_CREDENTIAL } from '../types/auth';
 import { sounds } from '../utils/audio';
+import {
+  getGeminiKeyFromSupabase,
+  saveGeminiKeyToSupabase
+} from '../services/supabaseService';
 
 interface SettingsUserManagementProps {
   currentUser: UserAccount;
@@ -53,6 +57,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   const [savedGeminiKey, setSavedGeminiKey] = useState(() => localStorage.getItem('igloo_gemini_api_key') || '');
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [isTestingKey, setIsTestingKey] = useState(false);
+  const [isSavingKey, setIsSavingKey] = useState(false);
   const [keyTestStatus, setKeyTestStatus] = useState<{ success: boolean; message: string } | null>(null);
 
   // Edit User State
@@ -70,6 +75,13 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
 
   useEffect(() => {
     loadUsers();
+    // Load remote Gemini Key from Supabase on mount
+    getGeminiKeyFromSupabase().then((remoteKey) => {
+      if (remoteKey) {
+        setSavedGeminiKey(remoteKey);
+        setGeminiKeyInput(remoteKey);
+      }
+    }).catch(() => {});
   }, []);
 
   const handleCreateUser = (e: React.FormEvent) => {
@@ -223,7 +235,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     setKeyTestStatus(null);
 
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(
         rawKey
       )}`;
       const payload = {
@@ -262,41 +274,65 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     }
   };
 
-  const handleSaveGeminiKey = () => {
+  const handleSaveGeminiKey = async () => {
     const key = geminiKeyInput.trim().replace(/^["']|["']$/g, '');
     sounds.playTap();
-    if (key) {
-      localStorage.setItem('igloo_gemini_api_key', key);
+    setIsSavingKey(true);
+    setStatusMsg(null);
+
+    try {
+      const savedToSupabase = await saveGeminiKeyToSupabase(key);
       setSavedGeminiKey(key);
       sounds.playSuccess();
+
+      if (key) {
+        setStatusMsg({
+          type: 'success',
+          text: savedToSupabase
+            ? 'Gemini API Key সফলভাবে Supabase ডাটাবেজ এবং সিস্টেমে সেভ করা হয়েছে!'
+            : 'Gemini API Key লোকালি সেভ হয়েছে (Supabase কানেকশন চেক করুন)।'
+        });
+      } else {
+        setStatusMsg({
+          type: 'success',
+          text: 'Custom Gemini API Key মুছে ফেলা হয়েছে।'
+        });
+      }
+    } catch (err: any) {
+      sounds.playError();
       setStatusMsg({
-        type: 'success',
-        text: 'Gemini API Key সফলভাবে সেভ করা হয়েছে!'
+        type: 'error',
+        text: `সেভ করতে সমস্যা হয়েছে: ${err?.message || err}`
       });
-    } else {
-      localStorage.removeItem('igloo_gemini_api_key');
+    } finally {
+      setIsSavingKey(false);
+      setTimeout(() => setStatusMsg(null), 4000);
+    }
+  };
+
+  const handleClearGeminiKey = async () => {
+    sounds.playTap();
+    setIsSavingKey(true);
+    try {
+      await saveGeminiKeyToSupabase('');
       setSavedGeminiKey('');
+      setGeminiKeyInput('');
+      setKeyTestStatus(null);
       sounds.playSuccess();
       setStatusMsg({
         type: 'success',
-        text: 'Custom Gemini API Key মুছে ফেলা হয়েছে।'
+        text: 'Custom Gemini Key Supabase এবং লোকাল থেকে সম্পূর্ণ মুছে ফেলা হয়েছে।'
       });
+    } catch (err: any) {
+      sounds.playError();
+      setStatusMsg({
+        type: 'error',
+        text: `মুছে ফেলতে সমস্যা হয়েছে: ${err?.message || err}`
+      });
+    } finally {
+      setIsSavingKey(false);
+      setTimeout(() => setStatusMsg(null), 3000);
     }
-    setTimeout(() => setStatusMsg(null), 3000);
-  };
-
-  const handleClearGeminiKey = () => {
-    sounds.playTap();
-    localStorage.removeItem('igloo_gemini_api_key');
-    setSavedGeminiKey('');
-    setGeminiKeyInput('');
-    setKeyTestStatus(null);
-    sounds.playSuccess();
-    setStatusMsg({
-      type: 'success',
-      text: 'Custom Gemini Key মুছে ফেলা হয়েছে।'
-    });
-    setTimeout(() => setStatusMsg(null), 3000);
   };
 
   const handlePasteKey = async () => {
@@ -521,10 +557,20 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
                 <button
                   type="button"
                   onClick={handleSaveGeminiKey}
-                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-xs font-black shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center space-x-1.5 cursor-pointer"
+                  disabled={isSavingKey}
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-2xl text-xs font-black shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center space-x-1.5 cursor-pointer disabled:cursor-not-allowed"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save Key</span>
+                  {isSavingKey ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Key</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

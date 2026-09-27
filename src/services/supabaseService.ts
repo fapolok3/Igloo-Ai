@@ -412,3 +412,74 @@ export async function saveProductToSupabase(product: any): Promise<boolean> {
     return false;
   }
 }
+
+// -------------------------------------------------------------
+// 5. System Settings (Gemini API Key & Global Config)
+// -------------------------------------------------------------
+export async function getGeminiKeyFromSupabase(): Promise<string> {
+  const client = getSupabaseClient();
+  if (!client) {
+    return (localStorage.getItem('igloo_gemini_api_key') || '').trim();
+  }
+
+  try {
+    const { data, error } = await client
+      .from(IGLOO_TABLES.SETTINGS)
+      .select('value')
+      .eq('key', 'gemini_api_key')
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Could not fetch gemini_api_key from Supabase:', error.message);
+      return (localStorage.getItem('igloo_gemini_api_key') || '').trim();
+    }
+
+    if (data?.value) {
+      const trimmed = data.value.trim().replace(/^["']|["']$/g, '');
+      localStorage.setItem('igloo_gemini_api_key', trimmed);
+      return trimmed;
+    }
+    return (localStorage.getItem('igloo_gemini_api_key') || '').trim();
+  } catch (err) {
+    console.error('Error fetching gemini_api_key from Supabase:', err);
+    return (localStorage.getItem('igloo_gemini_api_key') || '').trim();
+  }
+}
+
+export async function saveGeminiKeyToSupabase(key: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  const trimmed = (key || '').trim().replace(/^["']|["']$/g, '');
+
+  if (trimmed) {
+    localStorage.setItem('igloo_gemini_api_key', trimmed);
+  } else {
+    localStorage.removeItem('igloo_gemini_api_key');
+  }
+
+  if (!client) return false;
+
+  try {
+    if (trimmed) {
+      const payload = {
+        key: 'gemini_api_key',
+        value: trimmed,
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await client
+        .from(IGLOO_TABLES.SETTINGS)
+        .upsert(payload, { onConflict: 'key' });
+      if (error) throw error;
+    } else {
+      const { error } = await client
+        .from(IGLOO_TABLES.SETTINGS)
+        .delete()
+        .eq('key', 'gemini_api_key');
+      if (error) throw error;
+    }
+    return true;
+  } catch (err) {
+    console.error('Failed to save gemini_api_key to Supabase:', err);
+    return false;
+  }
+}
+

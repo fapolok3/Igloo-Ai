@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import { createClient } from '@supabase/supabase-js';
 import { IGLOO_PRODUCTS, IGLOO_FAQS, SPECIAL_ITEMS, DHAKA_METRO_AREAS } from './src/data/knowledgeBase.ts';
 import { generateLocalReply } from './src/services/localEngine.ts';
 
@@ -15,6 +16,27 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 
 app.use(express.json());
+
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://kcugywbwoqzgivksuisj.supabase.co';
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdWd5d2J3b3F6Z2l2a3N1aXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzOTUwNTUsImV4cCI6MjA5Mzk3MTA1NX0.GDocJTRnxcAe3j4vtH5r8iWuRfOBwxR9LSXCVIlT0yk';
+
+async function getGeminiKeyFromSupabaseServer(): Promise<string> {
+  try {
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+    const { data } = await sb
+      .from('igloo_app_settings')
+      .select('value')
+      .eq('key', 'gemini_api_key')
+      .maybeSingle();
+    return data?.value ? data.value.trim().replace(/^["']|["']$/g, '') : '';
+  } catch (err) {
+    return '';
+  }
+}
 
 // Initialize Gemini client using modern @google/genai SDK
 const apiKey =
@@ -547,7 +569,10 @@ Return ONLY a valid JSON object matching this exact schema (NO asterisks **):
 
 // Helper: Try generating with available models in sequence with graceful fallback
 async function generateWithGeminiFallback(prompt: string, customKey?: string) {
-  const effectiveKey = (customKey || apiKey || '').trim().replace(/^["']|["']$/g, '');
+  let effectiveKey = (customKey || apiKey || '').trim().replace(/^["']|["']$/g, '');
+  if (!effectiveKey) {
+    effectiveKey = await getGeminiKeyFromSupabaseServer();
+  }
   if (!effectiveKey) {
     return null;
   }
