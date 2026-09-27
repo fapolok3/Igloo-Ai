@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, Copy, Check, Sparkles, HelpCircle, Plus, Trash2 } from 'lucide-react';
 import { IGLOO_FAQS, FAQ_CATEGORIES, FAQItem } from '../data/knowledgeBase';
 import { copyTextToClipboard } from '../services/replyService';
 import { sounds } from '../utils/audio';
 import { AddFAQView } from './AddFAQView';
 import { UserRole } from '../types/auth';
+import { saveFaqToSupabase, deleteFaqFromSupabase, syncFaqsWithSupabase } from '../services/supabaseService';
 
 const STORAGE_CUSTOM_FAQS = 'igloo_custom_faqs_v1';
 
@@ -58,6 +59,14 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
     }
   };
 
+  useEffect(() => {
+    syncFaqsWithSupabase(faqsList).then((remoteList) => {
+      if (remoteList && remoteList.length > 0) {
+        setFaqsList(remoteList);
+      }
+    });
+  }, []);
+
   const handleAddNewFAQ = (newFaq: FAQItem) => {
     const updated = [newFaq, ...faqsList];
     setFaqsList(updated);
@@ -66,6 +75,10 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
     // Save custom FAQs to localStorage
     const onlyCustom = updated.filter((f) => f.id.startsWith('custom-faq-'));
     localStorage.setItem(STORAGE_CUSTOM_FAQS, JSON.stringify(onlyCustom));
+
+    // Save to Supabase
+    saveFaqToSupabase(newFaq).catch((e) => console.warn('Supabase save FAQ error:', e));
+
     setIsCreatingNewFAQ(false);
   };
 
@@ -77,6 +90,10 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
       setFaqsList(updated);
       const onlyCustom = updated.filter((f) => f.id.startsWith('custom-faq-'));
       localStorage.setItem(STORAGE_CUSTOM_FAQS, JSON.stringify(onlyCustom));
+
+      // Delete from Supabase
+      deleteFaqFromSupabase(id).catch((e) => console.warn('Supabase delete FAQ error:', e));
+
       sounds.playSuccess();
     }
   };

@@ -17,6 +17,8 @@ import { requestReply, copyTextToClipboard } from '../services/replyService';
 import { sounds } from '../utils/audio';
 import { CustomEditView } from './CustomEditView';
 import { getTimeBasedGreeting } from '../utils/timeGreeting';
+import { logReplyToSupabase } from '../services/supabaseService';
+import { getCurrentUser } from '../services/authService';
 
 interface ReplyGeneratorProps {
   initialQuery?: string;
@@ -96,6 +98,9 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
       const reply = await requestReply(textToProcess, false);
       setCurrentResult(reply);
       sounds.playSuccess();
+      logReplyToSupabase(reply, getCurrentUser()).catch((e) =>
+        console.warn('Supabase log reply failed:', e)
+      );
     } catch (err: any) {
       console.error('Error generating reply:', err);
       showToast('Error occurred, fallback loaded');
@@ -314,7 +319,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
                 {currentResult.source === 'gemini' ? (
                   <span className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-100 to-indigo-100 text-purple-900 font-bold text-xs px-2.5 py-1 rounded-full border border-purple-200/80 shadow-2xs">
                     <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Gemini AI Smart Reply</span>
+                    <span>Igloo AI Smart Reply</span>
                   </span>
                 ) : (
                   <span className="flex items-center space-x-1.5 bg-emerald-100 text-emerald-800 font-bold text-xs px-2.5 py-1 rounded-full border border-emerald-300">

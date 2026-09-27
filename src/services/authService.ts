@@ -1,4 +1,5 @@
 import { UserAccount, SUPER_ADMIN_CREDENTIAL } from '../types/auth';
+import { saveUserToSupabase, deleteUserFromSupabase } from './supabaseService';
 
 const STORAGE_KEY_USERS = 'igloo_auth_users_v2';
 const STORAGE_KEY_CURRENT_USER = 'igloo_auth_current_user_v2';
@@ -120,6 +121,7 @@ export function createUserByAdmin(data: { name: string; email: string; password:
 
   users.push(newUser);
   saveUsers(users);
+  saveUserToSupabase(newUser).catch((e) => console.warn('Supabase save user failed:', e));
   return { success: true, user: newUser };
 }
 
@@ -136,6 +138,7 @@ export function deleteUserByAdmin(userId: string): { success: boolean; error?: s
 
   const updated = users.filter((u) => u.id !== userId);
   saveUsers(updated);
+  deleteUserFromSupabase(userId).catch((e) => console.warn('Supabase delete user failed:', e));
   return { success: true };
 }
 
@@ -152,6 +155,7 @@ export function toggleUserStatusByAdmin(userId: string): { success: boolean; err
 
   target.status = target.status === 'active' ? 'inactive' : 'active';
   saveUsers(users);
+  saveUserToSupabase(target).catch((e) => console.warn('Supabase update status failed:', e));
   return { success: true };
 }
 
@@ -203,6 +207,7 @@ export function updateUserByAdmin(
   }
 
   saveUsers(users);
+  saveUserToSupabase(target).catch((e) => console.warn('Supabase update user failed:', e));
 
   // If the edited user is currently logged in, update active session
   const current = getCurrentUser();

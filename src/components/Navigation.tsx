@@ -34,48 +34,9 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <>
-      {/* Top App Tab Bar in Modern Purple Accent */}
-      <div className="hidden sm:block bg-white/90 backdrop-blur-md border-b border-slate-200/80 sticky top-[73px] z-30 shadow-2xs">
-        <div className="max-w-4xl mx-auto px-4 flex items-center justify-between">
-          <div className="flex space-x-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabClick(tab.id)}
-                  className={`flex items-center space-x-2 py-3.5 px-5 text-xs font-bold transition-all relative cursor-pointer select-none ${
-                    isActive
-                      ? 'text-purple-600 font-black'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50 rounded-xl my-1'
-                  }`}
-                >
-                  <div className={`p-1 rounded-lg transition-transform ${isActive ? 'scale-110 bg-purple-100/80 text-purple-600' : ''}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span>{tab.label}</span>
-                  {isActive && (
-                    <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* 
-        Bottom Floating Mobile Tab Bar (Modern Purple Accent)
-        Elevated above Android & iOS Navigation Gestures & Home Bar
-      */}
-      <div className="sm:hidden fixed bottom-3 left-3 right-3 z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-3xl shadow-2xl shadow-purple-950/20 px-2 py-2 mb-[env(safe-area-inset-bottom,4px)]">
-        <div
-          className={`grid h-14 max-w-md mx-auto items-center ${
-            userRole === 'super_admin' ? 'grid-cols-4' : 'grid-cols-3'
-          }`}
-        >
+    <nav className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-[62px] sm:top-[73px] z-30 shadow-2xs overflow-x-auto scrollbar-none">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 flex items-center justify-between">
+        <div className="flex space-x-1 py-1.5 sm:py-2 min-w-max mx-auto sm:mx-0">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -83,25 +44,28 @@ export const Navigation: React.FC<NavigationProps> = ({
               <button
                 key={tab.id}
                 onClick={() => handleTabClick(tab.id)}
-                className={`flex flex-col items-center justify-center space-y-1 transition active:scale-95 select-none relative cursor-pointer py-1 ${
-                  isActive ? 'text-purple-600' : 'text-slate-500 hover:text-slate-800'
+                className={`flex items-center space-x-1.5 sm:space-x-2 py-2 sm:py-2.5 px-3 sm:px-4 text-xs font-bold transition-all relative cursor-pointer select-none rounded-xl ${
+                  isActive
+                    ? 'text-purple-700 bg-purple-50/90 font-black shadow-2xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
                 }`}
               >
                 <div
-                  className={`p-1.5 rounded-2xl transition-all duration-200 ${
-                    isActive ? 'bg-purple-50 text-purple-600 ring-2 ring-purple-500/20 shadow-xs' : ''
+                  className={`p-1 rounded-lg transition-transform ${
+                    isActive ? 'scale-105 bg-purple-100 text-purple-700' : ''
                   }`}
                 >
-                  <Icon className="w-5 h-5" />
+                  <Icon className="w-4 h-4" />
                 </div>
-                <span className={`text-[10px] tracking-tight leading-none ${isActive ? 'font-black' : 'font-semibold'}`}>
-                  {tab.label}
-                </span>
+                <span className="whitespace-nowrap">{tab.label}</span>
+                {isActive && (
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full" />
+                )}
               </button>
             );
           })}
         </div>
       </div>
-    </>
+    </nav>
   );
 };
