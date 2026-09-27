@@ -7,7 +7,12 @@ import { GeneratedReply } from './localEngine';
 export const STORAGE_SUPABASE_URL = 'igloo_supabase_url';
 export const STORAGE_SUPABASE_KEY = 'igloo_supabase_anon_key';
 
-// Clean table names with prefix to avoid collision with default Supabase templates
+// Default Supabase project credentials for Igloo AI
+export const DEFAULT_SUPABASE_URL = 'https://kcugywbwoqzgivksuisj.supabase.co';
+export const DEFAULT_SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtjdWd5d2J3b3F6Z2l2a3N1aXNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzOTUwNTUsImV4cCI6MjA5Mzk3MTA1NX0.GDocJTRnxcAe3j4vtH5r8iWuRfOBwxR9LSXCVIlT0yk';
+
+// Clean table names with prefix to avoid collision with other projects
 export const IGLOO_TABLES = {
   USERS: 'igloo_user_accounts',
   FAQS: 'igloo_faq_items',
@@ -16,16 +21,23 @@ export const IGLOO_TABLES = {
   SETTINGS: 'igloo_app_settings'
 };
 
+function cleanSupabaseUrl(raw: string): string {
+  let u = (raw || '').trim();
+  u = u.replace(/\/rest\/v1\/?$/, '');
+  u = u.replace(/\/+$/, '');
+  return u;
+}
+
 export function getSupabaseCredentials(): { url: string; anonKey: string } {
-  const envUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+  const envUrl = cleanSupabaseUrl(import.meta.env.VITE_SUPABASE_URL || '');
   const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
-  const localUrl = (localStorage.getItem(STORAGE_SUPABASE_URL) || '').trim();
+  const localUrl = cleanSupabaseUrl(localStorage.getItem(STORAGE_SUPABASE_URL) || '');
   const localKey = (localStorage.getItem(STORAGE_SUPABASE_KEY) || '').trim();
 
   return {
-    url: localUrl || envUrl,
-    anonKey: localKey || envKey
+    url: localUrl || envUrl || DEFAULT_SUPABASE_URL,
+    anonKey: localKey || envKey || DEFAULT_SUPABASE_ANON_KEY
   };
 }
 
@@ -74,37 +86,20 @@ export async function testSupabaseConnection(
 ): Promise<{ success: boolean; message: string }> {
   try {
     const creds = getSupabaseCredentials();
-    const url = (customUrl || creds.url || '').trim();
+    const url = cleanSupabaseUrl(customUrl || creds.url || '');
     const key = (customKey || creds.anonKey || '').trim();
 
     if (!url || !key) {
-      return { success: false, message: 'Supabase URL এবং Anon Key প্রয়োজন।' };
+      return { success: false, message: 'URL এবং Anon Key উভয়ই প্রদান করা আবশ্যক।' };
     }
 
     const testClient = createClient(url, key, {
       auth: { persistSession: false, autoRefreshToken: false }
     });
 
-    // Check igloo_user_accounts first, fallback to user_accounts
-    let { data, error } = await testClient.from(IGLOO_TABLES.USERS).select('id').limit(1);
-
-    if (error && (error.code === '42P01' || error.message.includes('does not exist'))) {
-      const fallbackCheck = await testClient.from('user_accounts').select('id').limit(1);
-      if (!fallbackCheck.error) {
-        return {
-          success: true,
-          message: 'Supabase ডাটাবেজ সফলভাবে সংযুক্ত হয়েছে এবং টেবিল পাওয়া গেছে।'
-        };
-      }
-    }
+    const { error } = await testClient.from(IGLOO_TABLES.USERS).select('id').limit(1);
 
     if (error) {
-      if (error.code === '42P01' || error.message.includes('relation') || error.message.includes('does not exist')) {
-        return {
-          success: true,
-          message: 'Supabase কানেকশন সফল! তবে টেবিলগুলো এখনও তৈরি করা হয়নি। নিচে দেওয়া SQL রান করুন।'
-        };
-      }
       return { success: false, message: `Supabase ত্রুটি: ${error.message} (Code: ${error.code})` };
     }
 
@@ -117,24 +112,6 @@ export async function testSupabaseConnection(
   }
 }
 
-// Helper: Safely insert or upsert trying prefixed table then legacy table
-async function safeUpsert(client: SupabaseClient, primaryTable: string, legacyTable: string, payload: any) {
-  let res = await client.from(primaryTable).upsert(payload);
-  if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-    res = await client.from(legacyTable).upsert(payload);
-  }
-  return res;
-}
-
-// Helper: Safely delete
-async function safeDelete(client: SupabaseClient, primaryTable: string, legacyTable: string, matchCol: string, val: any) {
-  let res = await client.from(primaryTable).delete().eq(matchCol, val);
-  if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-    res = await client.from(legacyTable).delete().eq(matchCol, val);
-  }
-  return res;
-}
-
 // -------------------------------------------------------------
 // 1. User Accounts Table CRUD
 // -------------------------------------------------------------
@@ -143,10 +120,7 @@ export async function syncUsersWithSupabase(localUsers: UserAccount[]): Promise<
   if (!client) return localUsers;
 
   try {
-    let res = await client.from(IGLOO_TABLES.USERS).select('*');
-    if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-      res = await client.from('user_accounts').select('*');
-    }
+    const res = await client.from(IGLOO_TABLES.USERS).select('*');
 
     if (res.error) {
       console.warn('Could not fetch users from Supabase:', res.error.message);
@@ -154,7 +128,7 @@ export async function syncUsersWithSupabase(localUsers: UserAccount[]): Promise<
     }
 
     if (res.data && res.data.length > 0) {
-      return res.data.map((row: any) => ({
+      const remoteUsers: UserAccount[] = res.data.map((row: any) => ({
         id: row.id,
         name: row.name,
         email: row.email,
@@ -164,6 +138,16 @@ export async function syncUsersWithSupabase(localUsers: UserAccount[]): Promise<
         createdAt: Number(row.created_at) || Date.now(),
         lastLogin: row.last_login ? Number(row.last_login) : undefined
       }));
+
+      // Combine with any local user not in remote
+      const combined = [...remoteUsers];
+      for (const lu of localUsers) {
+        if (!combined.some((cu) => cu.email.toLowerCase() === lu.email.toLowerCase())) {
+          combined.push(lu);
+          await saveUserToSupabase(lu);
+        }
+      }
+      return combined;
     } else {
       // Seed with local users if table exists but empty
       for (const u of localUsers) {
@@ -185,7 +169,7 @@ export async function saveUserToSupabase(user: UserAccount): Promise<boolean> {
     const payload = {
       id: user.id,
       name: user.name,
-      email: user.email,
+      email: user.email.toLowerCase(),
       password: user.password || '',
       role: user.role,
       status: user.status,
@@ -193,7 +177,7 @@ export async function saveUserToSupabase(user: UserAccount): Promise<boolean> {
       last_login: user.lastLogin || null
     };
 
-    const { error } = await safeUpsert(client, IGLOO_TABLES.USERS, 'user_accounts', payload);
+    const { error } = await client.from(IGLOO_TABLES.USERS).upsert(payload, { onConflict: 'email' });
     if (error) throw error;
     return true;
   } catch (err) {
@@ -207,7 +191,7 @@ export async function deleteUserFromSupabase(userId: string): Promise<boolean> {
   if (!client) return false;
 
   try {
-    const { error } = await safeDelete(client, IGLOO_TABLES.USERS, 'user_accounts', 'id', userId);
+    const { error } = await client.from(IGLOO_TABLES.USERS).delete().eq('id', userId);
     if (error) throw error;
     return true;
   } catch (err) {
@@ -224,13 +208,10 @@ export async function syncFaqsWithSupabase(fallbackFaqs: FAQItem[]): Promise<FAQ
   if (!client) return fallbackFaqs;
 
   try {
-    let res = await client.from(IGLOO_TABLES.FAQS).select('*').order('created_at', { ascending: false });
-    if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-      res = await client.from('faq_items').select('*').order('created_at', { ascending: false });
-    }
+    const res = await client.from(IGLOO_TABLES.FAQS).select('*');
 
     if (res.error) {
-      console.warn('Could not fetch faqs from Supabase:', res.error.message);
+      console.warn('Could not fetch FAQs from Supabase:', res.error.message);
       return fallbackFaqs;
     }
 
@@ -240,7 +221,7 @@ export async function syncFaqsWithSupabase(fallbackFaqs: FAQItem[]): Promise<FAQ
         category: row.category,
         topic: row.topic,
         topicBn: row.topic_bn || row.topic,
-        keywords: Array.isArray(row.keywords) ? row.keywords : (row.keywords ? [row.keywords] : []),
+        keywords: Array.isArray(row.keywords) ? row.keywords : row.keywords ? [row.keywords] : [],
         banglaReply: row.bangla_reply,
         englishReply: row.english_reply,
         shortBn: row.short_bn || undefined,
@@ -248,6 +229,12 @@ export async function syncFaqsWithSupabase(fallbackFaqs: FAQItem[]): Promise<FAQ
         warmBn: row.warm_bn || undefined,
         warmEn: row.warm_en || undefined
       }));
+    } else {
+      // Seed with default FAQs
+      for (const faq of fallbackFaqs) {
+        await saveFaqToSupabase(faq);
+      }
+      return fallbackFaqs;
     }
   } catch (e) {
     console.error('Error loading FAQs from Supabase:', e);
@@ -275,7 +262,7 @@ export async function saveFaqToSupabase(faq: FAQItem): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await safeUpsert(client, IGLOO_TABLES.FAQS, 'faq_items', payload);
+    const { error } = await client.from(IGLOO_TABLES.FAQS).upsert(payload, { onConflict: 'id' });
     if (error) throw error;
     return true;
   } catch (err) {
@@ -289,7 +276,7 @@ export async function deleteFaqFromSupabase(faqId: string): Promise<boolean> {
   if (!client) return false;
 
   try {
-    const { error } = await safeDelete(client, IGLOO_TABLES.FAQS, 'faq_items', 'id', faqId);
+    const { error } = await client.from(IGLOO_TABLES.FAQS).delete().eq('id', faqId);
     if (error) throw error;
     return true;
   } catch (err) {
@@ -328,7 +315,7 @@ export async function logReplyToSupabase(
 
   try {
     const payload = {
-      id: reply.id || `reply-${Date.now()}`,
+      id: reply.id || `reply-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       query: reply.query,
       source: reply.source,
       matched_entity_name: reply.matchedEntityName || 'Igloo Customer Support',
@@ -345,12 +332,8 @@ export async function logReplyToSupabase(
       created_at: new Date().toISOString()
     };
 
-    let res = await client.from(IGLOO_TABLES.REPLY_LOGS).insert(payload);
-    if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-      res = await client.from('reply_logs').insert(payload);
-    }
-
-    if (res.error) throw res.error;
+    const { error } = await client.from(IGLOO_TABLES.REPLY_LOGS).insert(payload);
+    if (error) throw error;
     return true;
   } catch (err) {
     console.error('Failed to log reply to Supabase:', err);
@@ -366,10 +349,7 @@ export async function syncProductsWithSupabase(localProducts: any[]): Promise<an
   if (!client) return localProducts;
 
   try {
-    let res = await client.from(IGLOO_TABLES.PRODUCTS).select('*');
-    if (res.error && (res.error.code === '42P01' || res.error.message.includes('does not exist'))) {
-      res = await client.from('products').select('*');
-    }
+    const res = await client.from(IGLOO_TABLES.PRODUCTS).select('*');
 
     if (res.error) {
       console.warn('Could not fetch products from Supabase:', res.error.message);
@@ -391,6 +371,12 @@ export async function syncProductsWithSupabase(localProducts: any[]): Promise<an
         isOffer: Boolean(p.is_offer),
         tags: Array.isArray(p.tags) ? p.tags : []
       }));
+    } else {
+      // Seed initial products
+      for (const p of localProducts) {
+        await saveProductToSupabase(p);
+      }
+      return localProducts;
     }
   } catch (err) {
     console.error('Error fetching products from Supabase:', err);
@@ -418,7 +404,7 @@ export async function saveProductToSupabase(product: any): Promise<boolean> {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await safeUpsert(client, IGLOO_TABLES.PRODUCTS, 'products', payload);
+    const { error } = await client.from(IGLOO_TABLES.PRODUCTS).upsert(payload, { onConflict: 'id' });
     if (error) throw error;
     return true;
   } catch (err) {

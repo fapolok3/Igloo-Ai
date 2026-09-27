@@ -16,7 +16,6 @@ import { GeneratedReply } from '../services/localEngine';
 import { requestReply, copyTextToClipboard } from '../services/replyService';
 import { sounds } from '../utils/audio';
 import { CustomEditView } from './CustomEditView';
-import { getTimeBasedGreeting } from '../utils/timeGreeting';
 import { logReplyToSupabase } from '../services/supabaseService';
 import { getCurrentUser } from '../services/authService';
 
@@ -34,7 +33,6 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   const [isEditingFullPage, setIsEditingFullPage] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const greetingInfo = getTimeBasedGreeting();
 
   // Auto-resize textarea to fit message height completely without any scrolling
   const autoResizeTextarea = () => {
@@ -196,7 +194,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   }
 
   return (
-    <div className="space-y-4 pb-36 sm:pb-12 animate-in fade-in duration-150">
+    <div className="space-y-4 pb-24 sm:pb-24 animate-in fade-in duration-150">
       {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-2xl border border-slate-700 flex items-center space-x-2 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
@@ -204,24 +202,6 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
           <span>{toastMessage}</span>
         </div>
       )}
-
-      {/* Dynamic Time Greeting Banner */}
-      <div className="bg-gradient-to-r from-purple-700/10 via-indigo-700/5 to-purple-700/10 rounded-3xl p-3.5 sm:p-4 border border-purple-200/70 shadow-xs flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center text-lg shadow-md shadow-purple-600/20 flex-shrink-0">
-            {greetingInfo.icon}
-          </div>
-          <div>
-            <h2 className="text-sm sm:text-base font-black text-slate-900 flex items-center space-x-1.5">
-              <span>{greetingInfo.greeting}!</span>
-              <span className="text-xs font-bold text-purple-700">({greetingInfo.greetingBn})</span>
-            </h2>
-            <p className="text-[11px] sm:text-xs text-slate-500 font-medium">
-              Igloo Customer Support Intelligence • Ready to generate replies
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* Customer Message Input Card - Auto-resizing so NO scrolling is required */}
       <div className="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200 shadow-md relative focus-within:ring-2 focus-within:ring-purple-500/40 focus-within:border-purple-400 transition-all">
@@ -285,11 +265,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
         </div>
 
         {/* Bottom Actions inside Input Box */}
-        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-100">
-          <span className="text-[11px] text-slate-400 hidden sm:inline">
-            Press <kbd className="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[10px] font-mono">Ctrl + Enter</kbd> to generate
-          </span>
-
+        <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-slate-100">
           {/* Modern Purple Generate Button */}
           <button
             onClick={() => handleGenerate()}

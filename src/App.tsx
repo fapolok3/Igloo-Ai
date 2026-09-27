@@ -6,13 +6,14 @@ import { ProductView } from './components/ProductView';
 import { FAQExplorer } from './components/FAQExplorer';
 import { SettingsUserManagement } from './components/SettingsUserManagement';
 import { LoginPage } from './components/LoginPage';
-import { getCurrentUser, logoutUser } from './services/authService';
+import { getCurrentUser, logoutUser, getStoredUsers, saveUsers } from './services/authService';
 import { UserAccount } from './types/auth';
+import { syncUsersWithSupabase, syncFaqsWithSupabase } from './services/supabaseService';
+import { IGLOO_FAQS } from './data/knowledgeBase';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('generator');
-  const [isMobileFrame, setIsMobileFrame] = useState<boolean>(false);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [initialQueryForGenerator, setInitialQueryForGenerator] = useState<string>('');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -24,6 +25,15 @@ export default function App() {
     if (user) {
       setCurrentUser(user);
     }
+
+    // Silent background sync with Supabase
+    syncUsersWithSupabase(getStoredUsers()).then((synced) => {
+      if (synced && synced.length > 0) {
+        saveUsers(synced);
+      }
+    }).catch(() => {});
+
+    syncFaqsWithSupabase(IGLOO_FAQS).catch(() => {});
 
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -81,19 +91,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex justify-center items-center sm:p-0 md:p-4 transition-all">
-      {/* Container - Adaptive Mobile App Wrapper on Desktop, 100% Native on Mobile */}
-      <div
-        className={`w-full bg-slate-100 min-h-screen flex flex-col transition-all duration-300 relative overflow-x-hidden ${
-          isMobileFrame
-            ? 'max-w-md my-auto shadow-2xl rounded-[40px] border-[8px] border-slate-800 overflow-hidden ring-1 ring-purple-500/20'
-            : 'max-w-4xl mx-auto shadow-2xl sm:min-h-screen md:rounded-3xl md:my-4 md:border md:border-purple-200/40 overflow-hidden'
-        }`}
-      >
+    <div className="min-h-screen bg-slate-900/10 flex justify-center items-start sm:p-0 md:py-4 transition-all">
+      {/* Mobile App Container - Designed specifically for mobile screens */}
+      <div className="w-full max-w-md bg-slate-100 min-h-screen flex flex-col relative overflow-x-hidden shadow-2xl sm:border sm:border-slate-200/80 sm:rounded-[36px]">
         {/* Modern Mobile App Header in Modern Purple */}
         <Header
-          isMobileFrame={isMobileFrame}
-          setIsMobileFrame={setIsMobileFrame}
           isOnline={isOnline}
           onInstallPwa={handleInstallPwa}
           canInstallPwa={canInstallPwa}
@@ -101,7 +103,7 @@ export default function App() {
           onLogout={handleLogout}
         />
 
-        {/* Top Desktop Tabs */}
+        {/* Floating Mobile Tabs */}
         <Navigation
           activeTab={activeTab}
           setActiveTab={setActiveTab}
@@ -109,7 +111,7 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3 sm:p-5 max-w-4xl w-full mx-auto">
+        <main className="flex-1 p-3.5 w-full mx-auto pb-24">
           {activeTab === 'generator' && (
             <ReplyGenerator
               initialQuery={initialQueryForGenerator}

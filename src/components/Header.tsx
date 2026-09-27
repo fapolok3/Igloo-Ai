@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { Smartphone, Monitor, Download, LogOut, Shield, User } from 'lucide-react';
+import { Download, LogOut, Shield, User } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { UserAccount } from '../types/auth';
-import { getTimeBasedGreeting } from '../utils/timeGreeting';
 
 interface HeaderProps {
-  isMobileFrame: boolean;
-  setIsMobileFrame: (val: boolean) => void;
   isOnline: boolean;
   onInstallPwa?: () => void;
   canInstallPwa?: boolean;
@@ -15,15 +12,12 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  isMobileFrame,
-  setIsMobileFrame,
   onInstallPwa,
   canInstallPwa,
   currentUser,
   onLogout
 }) => {
   const [logoLoaded, setLogoLoaded] = useState(true);
-  const greetingInfo = getTimeBasedGreeting();
 
   const handleLogoutClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,7 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </div>
 
-              {/* User Profile Badge with Dynamic System Greeting */}
+              {/* User Profile Badge */}
               {currentUser && (
                 <div className="flex items-center space-x-1.5 mt-0.5">
                   <span className="text-[10px] font-bold text-purple-100 flex items-center space-x-1 bg-black/20 px-2 py-0.5 rounded-md">
@@ -72,7 +66,6 @@ export const Header: React.FC<HeaderProps> = ({
                     ) : (
                       <User className="w-3 h-3 text-white" />
                     )}
-                    <span className="hidden sm:inline text-purple-200 font-semibold">{greetingInfo.greeting},</span>
                     <span className="truncate max-w-[110px]">{currentUser.name}</span>
                     <span className="text-[9px] text-amber-300 font-extrabold uppercase">
                       ({currentUser.role === 'super_admin' ? 'Super Admin' : 'User'})
@@ -99,22 +92,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-xs font-bold">Install</span>
               </button>
             )}
-
-            {/* Frame View Toggle (Desktop Only) */}
-            <button
-              onClick={() => {
-                sounds.playTap();
-                setIsMobileFrame(!isMobileFrame);
-              }}
-              className="p-2 rounded-xl bg-white/15 hover:bg-white/25 text-white transition active:scale-90 border border-white/30 hidden md:flex items-center justify-center cursor-pointer"
-              title={isMobileFrame ? 'Expand to Full Width' : 'Preview in Phone Frame'}
-            >
-              {isMobileFrame ? (
-                <Monitor className="w-4 h-4 text-white" />
-              ) : (
-                <Smartphone className="w-4 h-4 text-white" />
-              )}
-            </button>
 
             {/* Instant Functional Logout Button */}
             {currentUser && (
