@@ -546,7 +546,14 @@ async function generateWithGeminiFallback(prompt: string) {
     return null;
   }
 
-  const modelCandidates = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+  const modelCandidates = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-3.8-flash',
+    'gemini-3.1-flash-lite'
+  ];
 
   for (const modelName of modelCandidates) {
     try {

@@ -57,15 +57,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  // Retrieve API Key across all common variable names and clean quotes/spaces
-  const rawKey =
-    process.env.GEMINI_API_KEY ||
-    process.env.GOOGLE_GENAI_API_KEY ||
-    process.env.VITE_GEMINI_API_KEY ||
-    process.env.API_KEY ||
-    process.env.GOOGLE_API_KEY ||
-    '';
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
+  // Retrieve API Key across all common variable names, key-name fallback, and clean quotes/spaces
+  let apiKey = '';
+  const knownKeys = [
+    'GEMINI_API_KEY',
+    'GOOGLE_GENAI_API_KEY',
+    'VITE_GEMINI_API_KEY',
+    'API_KEY',
+    'GOOGLE_API_KEY',
+    'GEMINI_KEY'
+  ];
+  for (const k of knownKeys) {
+    if (process.env[k] && typeof process.env[k] === 'string' && process.env[k]!.trim()) {
+      apiKey = process.env[k]!.trim().replace(/^["']|["']$/g, '');
+      break;
+    }
+  }
+
+  // Fallback: If user pasted API key as the Key name in Vercel
+  if (!apiKey) {
+    for (const k of Object.keys(process.env)) {
+      if (k.trim().startsWith('AIzaSy')) {
+        apiKey = k.trim().replace(/^["']|["']$/g, '');
+        break;
+      }
+    }
+  }
+
+  // Fallback: Check if any process.env value starts with AIzaSy
+  if (!apiKey) {
+    for (const [k, v] of Object.entries(process.env)) {
+      if (typeof v === 'string' && v.trim().startsWith('AIzaSy')) {
+        apiKey = v.trim().replace(/^["']|["']$/g, '');
+        break;
+      }
+    }
+  }
 
   // GET Request: Diagnostic Endpoint for easy browser verification
   if (req.method === 'GET') {
@@ -119,7 +146,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (ai) {
-      const modelCandidates = ['gemini-3.8-flash', 'gemini-3.1-flash-lite', 'gemini-flash-latest'];
+      // Universal model list: standard free tier keys support gemini-2.5-flash and gemini-2.0-flash
+      const modelCandidates = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-flash-latest',
+        'gemini-1.5-flash',
+        'gemini-3.8-flash',
+        'gemini-3.1-flash-lite'
+      ];
       for (const modelName of modelCandidates) {
         try {
           const response = await ai.models.generateContent({
