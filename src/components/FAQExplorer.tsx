@@ -6,6 +6,8 @@ import { sounds } from '../utils/audio';
 import { AddFAQView } from './AddFAQView';
 import { UserRole } from '../types/auth';
 import { saveFaqToSupabase, deleteFaqFromSupabase, syncFaqsWithSupabase } from '../services/supabaseService';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { CreateSuccessModal } from './CreateSuccessModal';
 
 const STORAGE_CUSTOM_FAQS = 'igloo_custom_faqs_v1';
 
@@ -33,6 +35,8 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
   const [expandedId, setExpandedId] = useState<string | null>(IGLOO_FAQS[0]?.id || null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isCreatingNewFAQ, setIsCreatingNewFAQ] = useState(false);
+  const [faqToDelete, setFaqToDelete] = useState<FAQItem | null>(null);
+  const [createdFaqData, setCreatedFaqData] = useState<FAQItem | null>(null);
 
   const filteredFaqs = faqsList.filter((faq) => {
     const matchesCategory = selectedCategory === 'All' || faq.category === selectedCategory;
@@ -80,22 +84,28 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
     saveFaqToSupabase(newFaq).catch((e) => console.warn('Supabase save FAQ error:', e));
 
     setIsCreatingNewFAQ(false);
+    setCreatedFaqData(newFaq);
   };
 
   const handleDeleteCustomFAQ = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    sounds.playTap();
-    if (window.confirm('Delete this custom FAQ script?')) {
-      const updated = faqsList.filter((f) => f.id !== id);
-      setFaqsList(updated);
-      const onlyCustom = updated.filter((f) => f.id.startsWith('custom-faq-'));
-      localStorage.setItem(STORAGE_CUSTOM_FAQS, JSON.stringify(onlyCustom));
-
-      // Delete from Supabase
-      deleteFaqFromSupabase(id).catch((e) => console.warn('Supabase delete FAQ error:', e));
-
-      sounds.playSuccess();
+    const target = faqsList.find((f) => f.id === id);
+    if (target) {
+      setFaqToDelete(target);
     }
+  };
+
+  const executeDeleteFaq = () => {
+    if (!faqToDelete) return;
+    const id = faqToDelete.id;
+    const updated = faqsList.filter((f) => f.id !== id);
+    setFaqsList(updated);
+    const onlyCustom = updated.filter((f) => f.id.startsWith('custom-faq-'));
+    localStorage.setItem(STORAGE_CUSTOM_FAQS, JSON.stringify(onlyCustom));
+
+    // Delete from Supabase
+    deleteFaqFromSupabase(id).catch((e) => console.warn('Supabase delete FAQ error:', e));
+    setFaqToDelete(null);
   };
 
   if (isCreatingNewFAQ) {
@@ -351,6 +361,39 @@ export const FAQExplorer: React.FC<FAQExplorerProps> = ({ onTestInGenerator, use
           })}
         </div>
       )}
+
+      {/* Delete FAQ Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(faqToDelete)}
+        title="FAQ স্ক্রিপ্ট মুছে ফেলতে চান?"
+        itemName={faqToDelete?.topic}
+        itemType="Custom FAQ Script"
+        description="আপনি কি নিশ্চিত যে এই কাস্টম FAQ স্ক্রিপ্টটি Knowledge Base থেকে মুছে ফেলতে চান?"
+        warningNote="সতর্কতা: এটি মুছে ফেললে ডাটাবেজ এবং লোকাল মেমোরি থেকে সম্পূর্ণ ডিলিট হয়ে যাবে।"
+        confirmLabel="হ্যাঁ, মুছে ফেলুন"
+        cancelLabel="না, বাতিল করুন"
+        onConfirm={executeDeleteFaq}
+        onCancel={() => setFaqToDelete(null)}
+      />
+
+      {/* Create FAQ Success Modal */}
+      <CreateSuccessModal
+        isOpen={Boolean(createdFaqData)}
+        title="নতুন FAQ স্ক্রিপ্ট তৈরি হয়েছে! 📜"
+        subtitle="নতুন কাস্টম FAQ স্ক্রিপ্টটি সফলভাবে Knowledge Base ও Supabase-এ সংরক্ষিত হয়েছে।"
+        badgeText="FAQ তৈরি সম্পন্ন"
+        details={
+          createdFaqData
+            ? [
+                { label: 'প্রশ্ন / বিষয় (English)', value: createdFaqData.topic },
+                { label: 'প্রশ্ন / বিষয় (Bangla)', value: createdFaqData.topicBn },
+                { label: 'ক্যাটাগরি', value: createdFaqData.category }
+              ]
+            : []
+        }
+        confirmLabel="ধন্যবাদ, ঠিক আছে"
+        onClose={() => setCreatedFaqData(null)}
+      />
     </div>
   );
 };

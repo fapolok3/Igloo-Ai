@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Plus, CheckCircle, HelpCircle, Sparkles } from 'lucide-react';
 import { FAQItem, FAQ_CATEGORIES } from '../data/knowledgeBase';
 import { sounds } from '../utils/audio';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface AddFAQViewProps {
   onBack: () => void;
@@ -18,6 +19,16 @@ export const AddFAQView: React.FC<AddFAQViewProps> = ({ onBack, onSave }) => {
   const [englishReply, setEnglishReply] = useState('');
   const [keywords, setKeywords] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isConfirmingDiscard, setIsConfirmingDiscard] = useState(false);
+
+  const handleCancelRequest = () => {
+    sounds.playTap();
+    if (topic.trim() || banglaReply.trim()) {
+      setIsConfirmingDiscard(true);
+    } else {
+      onBack();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,10 +72,7 @@ export const AddFAQView: React.FC<AddFAQViewProps> = ({ onBack, onSave }) => {
       <div className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-xs flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => {
-              sounds.playTap();
-              onBack();
-            }}
+            onClick={handleCancelRequest}
             className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer active:scale-95"
             title="Go back to FAQ list"
           >
@@ -81,10 +89,7 @@ export const AddFAQView: React.FC<AddFAQViewProps> = ({ onBack, onSave }) => {
         </div>
 
         <button
-          onClick={() => {
-            sounds.playTap();
-            onBack();
-          }}
+          onClick={handleCancelRequest}
           className="text-xs font-bold text-slate-500 hover:text-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition hidden sm:inline-block"
         >
           Cancel
@@ -220,10 +225,7 @@ export const AddFAQView: React.FC<AddFAQViewProps> = ({ onBack, onSave }) => {
           <div className="pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => {
-                sounds.playTap();
-                onBack();
-              }}
+              onClick={handleCancelRequest}
               className="w-full py-3.5 px-4 rounded-2xl border border-slate-300 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-50 transition cursor-pointer active:scale-95 text-center order-2 sm:order-1"
             >
               Cancel & Return
@@ -238,6 +240,20 @@ export const AddFAQView: React.FC<AddFAQViewProps> = ({ onBack, onSave }) => {
           </div>
         </form>
       </div>
+
+      {/* Discard Draft Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={isConfirmingDiscard}
+        title="FAQ ড্রাফট বাতিল করবেন?"
+        itemName={topic || 'নতুন FAQ স্ক্রিপ্ট'}
+        itemType="FAQ Draft"
+        description="আপনার টাইপ করা প্রশ্ন বা উত্তর মুছে যাবে এবং Knowledge Base-এ সেভ হবে না। আপনি কি সত্যিই ফিরে যেতে চান?"
+        warningNote="সতর্কতা: আনসেভড তথ্যগুলো হারিয়ে যাবে।"
+        confirmLabel="হ্যাঁ, বাতিল করে ফিরে যান"
+        cancelLabel="না, এডিট চালিয়ে যান"
+        onConfirm={onBack}
+        onCancel={() => setIsConfirmingDiscard(false)}
+      />
     </div>
   );
 };

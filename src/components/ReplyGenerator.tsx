@@ -18,6 +18,7 @@ import { sounds } from '../utils/audio';
 import { CustomEditView } from './CustomEditView';
 import { logReplyToSupabase } from '../services/supabaseService';
 import { getCurrentUser } from '../services/authService';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 
 interface ReplyGeneratorProps {
   initialQuery?: string;
@@ -31,6 +32,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   const [copiedSuccess, setCopiedSuccess] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isEditingFullPage, setIsEditingFullPage] = useState(false);
+  const [isConfirmingClearInput, setIsConfirmingClearInput] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -227,9 +229,13 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
                 type="button"
                 onClick={() => {
                   sounds.playTap();
-                  setInputMessage('');
-                  if (inputRef.current) {
-                    inputRef.current.style.height = '105px';
+                  if (inputMessage.trim().length > 15) {
+                    setIsConfirmingClearInput(true);
+                  } else {
+                    setInputMessage('');
+                    if (inputRef.current) {
+                      inputRef.current.style.height = '105px';
+                    }
                   }
                 }}
                 className="text-slate-400 hover:text-rose-600 bg-slate-100 hover:bg-rose-50 px-2.5 py-1 rounded-xl transition active:scale-90 cursor-pointer text-xs font-bold flex items-center space-x-1"
@@ -423,6 +429,26 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
           </div>
         </div>
       )}
+
+      {/* Clear Customer Message Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={isConfirmingClearInput}
+        title="মেসেজটি মুছে ফেলতে চান?"
+        itemName={inputMessage.slice(0, 90) + (inputMessage.length > 90 ? '...' : '')}
+        itemType="Customer Message"
+        description="আপনার ইনপুট করা কাস্টমার মেসেজটি সম্পূর্ণ মুছে ফেলা হবে। আপনি কি নিশ্চিত?"
+        warningNote="মুছে ফেললে এটি পুনরায় টাইপ করতে হবে।"
+        confirmLabel="হ্যাঁ, মুছে ফেলুন"
+        cancelLabel="না, রাখুন"
+        onConfirm={() => {
+          setInputMessage('');
+          setIsConfirmingClearInput(false);
+          if (inputRef.current) {
+            inputRef.current.style.height = '105px';
+          }
+        }}
+        onCancel={() => setIsConfirmingClearInput(false)}
+      />
     </div>
   );
 };

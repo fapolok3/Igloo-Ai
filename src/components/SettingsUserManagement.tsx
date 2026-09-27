@@ -37,6 +37,8 @@ import {
   getGeminiKeyFromSupabase,
   saveGeminiKeyToSupabase
 } from '../services/supabaseService';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { CreateSuccessModal } from './CreateSuccessModal';
 
 interface SettingsUserManagementProps {
   currentUser: UserAccount;
@@ -51,6 +53,17 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   const [role, setRole] = useState<'user' | 'super_admin'>('user');
   const [showPassword, setShowPassword] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Modal dialog states
+  const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isConfirmingClearKey, setIsConfirmingClearKey] = useState(false);
+  const [createdUserData, setCreatedUserData] = useState<{
+    name: string;
+    email: string;
+    role: string;
+    password?: string;
+  } | null>(null);
 
   // Gemini AI Key Management State (Super Admin Exclusive)
   const [geminiKeyInput, setGeminiKeyInput] = useState(() => localStorage.getItem('igloo_gemini_api_key') || '');
@@ -110,7 +123,13 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
 
     if (res.success) {
       sounds.playSuccess();
-      setStatusMsg({ type: 'success', text: `অ্যাকাউন্ট "${name}" সফলভাবে তৈরি হয়েছে!` });
+      // Show rich success popup modal
+      setCreatedUserData({
+        name: name.trim(),
+        email: email.trim(),
+        role: role === 'super_admin' ? 'Super Admin' : 'Agent User',
+        password: password.trim()
+      });
       setName('');
       setEmail('');
       setPassword('');
@@ -152,16 +171,28 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
       return;
     }
 
-    if (window.confirm(`আপনি কি নিশ্চিত যে "${targetUser.name}" এর অ্যাকাউন্টটি ডিলিট করতে চান?`)) {
-      const res = deleteUserByAdmin(targetUser.id);
-      if (res.success) {
-        sounds.playSuccess();
-        setStatusMsg({ type: 'success', text: 'অ্যাকাউন্ট সফলভাবে ডিলিট করা হয়েছে।' });
-        loadUsers();
-      } else {
-        sounds.playError();
-        setStatusMsg({ type: 'error', text: res.error || 'অ্যাকাউন্ট ডিলিট করা যায়নি।' });
-      }
+    // Open beautiful UI confirmation modal instead of browser alert
+    setUserToDelete(targetUser);
+  };
+
+  const executeDeleteUser = () => {
+    if (!userToDelete) return;
+    setIsDeletingUser(true);
+    const target = userToDelete;
+    const res = deleteUserByAdmin(target.id);
+    setIsDeletingUser(false);
+    setUserToDelete(null);
+
+    if (res.success) {
+      sounds.playSuccess();
+      setStatusMsg({
+        type: 'success',
+        text: `"${target.name}" এর অ্যাকাউন্ট সফলভাবে মুছে ফেলা হয়েছে!`
+      });
+      loadUsers();
+    } else {
+      sounds.playError();
+      setStatusMsg({ type: 'error', text: res.error || 'অ্যাকাউন্ট ডিলিট করা যায়নি।' });
     }
   };
 
@@ -310,9 +341,14 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     }
   };
 
-  const handleClearGeminiKey = async () => {
+  const handleClearGeminiKey = () => {
     sounds.playTap();
+    setIsConfirmingClearKey(true);
+  };
+
+  const executeClearGeminiKey = async () => {
     setIsSavingKey(true);
+    setIsConfirmingClearKey(false);
     try {
       await saveGeminiKeyToSupabase('');
       setSavedGeminiKey('');
@@ -913,6 +949,60 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
           </div>
         </div>
       )}
+
+      {/* Delete User Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={Boolean(userToDelete)}
+        title="ইউজার অ্যাকাউন্ট ডিলিট করতে চান?"
+        itemName={userToDelete ? `${userToDelete.name} (${userToDelete.email})` : ''}
+        itemType={userToDelete?.role === 'super_admin' ? 'Super Admin' : 'Agent User'}
+        description="আপনি কি নিশ্চিত যে এই ইউজারের অ্যাকাউন্টটি স্থায়ীভাবে ডিলিট করতে চান? ডিলিট করার পর এই ইউজার আর অ্যাপে লগইন করতে পারবেন না।"
+        warningNote="সতর্কতা: অ্যাকাউন্ট মুছে ফেললে ডাটাবেজ থেকে সকল অনুমতি বাতিল হয়ে যাবে।"
+        confirmLabel="হ্যাঁ, অ্যাকাউন্ট ডিলিট করুন"
+        cancelLabel="না, বাতিল করুন"
+        isLoading={isDeletingUser}
+        onConfirm={executeDeleteUser}
+        onCancel={() => {
+          if (!isDeletingUser) setUserToDelete(null);
+        }}
+      />
+
+      {/* Clear Gemini Key Confirmation Modal */}
+      <ConfirmDeleteModal
+        isOpen={isConfirmingClearKey}
+        title="Gemini API Key মুছে ফেলতে চান?"
+        itemName="Active Custom Gemini Key"
+        itemType="API Key"
+        description="আপনি কি নিশ্চিত যে আপনার সেভ করা Custom Gemini API Key টি মুছে ফেলতে চান? এটি মুছে ফেললে ডিফল্ট সার্ভার কনফিগারেশন কার্যকর হবে।"
+        warningNote="সতর্কতা: Supabase ডাটাবেজ এবং বর্তমান ব্রাউজার থেকে এই কি (Key) মুছে যাবে।"
+        confirmLabel="হ্যাঁ, মুছে ফেলুন"
+        cancelLabel="না, বাতিল করুন"
+        isLoading={isSavingKey}
+        onConfirm={executeClearGeminiKey}
+        onCancel={() => setIsConfirmingClearKey(false)}
+      />
+
+      {/* New User Creation Success Modal */}
+      <CreateSuccessModal
+        isOpen={Boolean(createdUserData)}
+        title="নতুন অ্যাকাউন্ট তৈরি সফল হয়েছে! 🎉"
+        subtitle="সিস্টেমে নতুন ইউজার অ্যাকাউন্ট সফলভাবে রেজিস্টার ও প্রস্তুত হয়েছে। ব্যবহারকারী এখন লগইন করতে পারবেন।"
+        badgeText="ইউজার তৈরি সম্পন্ন"
+        details={
+          createdUserData
+            ? [
+                { label: 'ব্যবহারকারীর নাম', value: createdUserData.name },
+                { label: 'লগইন ইমেইল', value: createdUserData.email, copyable: true },
+                { label: 'অ্যাকাউন্ট রোল', value: createdUserData.role },
+                ...(createdUserData.password
+                  ? [{ label: 'পাসওয়ার্ড', value: createdUserData.password, copyable: true }]
+                  : [])
+              ]
+            : []
+        }
+        confirmLabel="ধন্যবাদ, ঠিক আছে"
+        onClose={() => setCreatedUserData(null)}
+      />
     </div>
   );
 };
