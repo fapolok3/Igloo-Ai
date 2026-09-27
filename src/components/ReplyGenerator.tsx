@@ -9,7 +9,13 @@ import {
   Edit3,
   Globe,
   ClipboardPaste,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Key,
+  ExternalLink,
+  CheckCircle2,
+  XCircle,
+  Loader2
 } from 'lucide-react';
 import { GeneratedReply } from '../services/localEngine';
 import { requestReply, copyTextToClipboard } from '../services/replyService';
@@ -30,8 +36,52 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isEditingFullPage, setIsEditingFullPage] = useState(false);
 
+  // Custom Gemini Key state & test
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('igloo_gemini_api_key') || '');
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [testResult, setTestResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const greetingInfo = getTimeBasedGreeting();
+
+  const handleTestAndSaveKey = async () => {
+    const key = apiKeyInput.trim();
+    if (!key) {
+      localStorage.removeItem('igloo_gemini_api_key');
+      setTestResult({ success: true, message: 'Custom key মুছে ফেলা হয়েছে। সার্ভার ডিফল্ট ব্যবহৃত হবে।' });
+      return;
+    }
+
+    setIsTestingKey(true);
+    setTestResult(null);
+
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: 'ping' }] }] })
+      });
+
+      if (res.ok) {
+        localStorage.setItem('igloo_gemini_api_key', key);
+        setTestResult({ success: true, message: 'অভিনন্দন! এই Key টি গুগল দ্বারা সফলভাবে ভেরিফাইড হয়েছে। এখন জেমিনাই সরাসরি চলবে!' });
+        sounds.playSuccess();
+      } else {
+        const errText = await res.text();
+        let msg = 'গুগল এই Key-টি প্রত্যাখ্যান করেছে (API Key Not Valid)।';
+        if (errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
+          msg = 'এই Key টি বৈধ নয়। গুগল এআই স্টুডিও (aistudio.google.com/apikey) থেকে একটি নতুন ফ্রি Key তৈরি করে দিন।';
+        }
+        setTestResult({ success: false, message: msg });
+        sounds.playTap();
+      }
+    } catch (err: any) {
+      setTestResult({ success: false, message: `নেটওয়ার্ক সমস্যা: ${err?.message || err}` });
+    } finally {
+      setIsTestingKey(false);
+    }
+  };
 
   // Auto-resize textarea to fit message height completely without any scrolling
   const autoResizeTextarea = () => {
@@ -327,6 +377,40 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
               </div>
             </div>
 
+            {/* Error / Fallback Explanation Notice */}
+            {currentResult.source !== 'gemini' && currentResult.debug?.geminiError && (
+              <div className="mb-4 p-3.5 bg-amber-50/90 border border-amber-200/80 rounded-2xl text-xs text-amber-900 flex items-start space-x-3 shadow-2xs">
+                <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-black text-amber-950">Gemini AI নোটিশ: Key ভ্যালিড হয়নি</span>
+                    <button
+                      onClick={() => setShowKeyModal(true)}
+                      type="button"
+                      className="text-purple-700 hover:text-purple-900 font-bold underline cursor-pointer text-xs"
+                    >
+                      Key পরিবর্তন করুন
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    গুগল জানিয়েছে: <code className="bg-amber-100/90 px-1 py-0.5 rounded font-mono text-[10px]">{currentResult.debug.geminiError}</code>
+                  </p>
+                  <p className="text-[11px] text-slate-600">
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-purple-700 font-bold underline inline-flex items-center"
+                    >
+                      Google AI Studio (aistudio.google.com/apikey)
+                      <ExternalLink className="w-3 h-3 ml-0.5" />
+                    </a>
+                    {' '}থেকে একটি সম্পূর্ণ নতুন ফ্রি Key তৈরি করে এখানে বসিয়ে টেস্ট করুন।
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Language Switcher Tabs for Mobile & Quick Switch */}
             <div className="flex items-center justify-between gap-2 mb-3">
               <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1">
@@ -424,6 +508,121 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
                   <span>16556</span>
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Gemini API Key Configuration Modal */}
+      {showKeyModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-purple-100 text-purple-700 rounded-xl">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-base">Gemini API Key সেটআপ</h3>
+                  <p className="text-[11px] text-slate-500">ব্রাউজার ও সার্ভারে তাৎক্ষণিক জেমিনাই এক্টিভেশন</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  sounds.playTap();
+                  setShowKeyModal(false);
+                  setTestResult(null);
+                }}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-purple-50/70 border border-purple-100 rounded-2xl p-3.5 text-xs text-purple-950 space-y-1.5">
+                <p className="font-bold flex items-center space-x-1">
+                  <span>কীভাবে ফ্রি Gemini Key পাবেন?</span>
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-purple-900">
+                  <li>
+                    ভিজিট করুন:{' '}
+                    <a
+                      href="https://aistudio.google.com/apikey"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold underline text-purple-700 inline-flex items-center"
+                    >
+                      aistudio.google.com/apikey
+                      <ExternalLink className="w-3 h-3 ml-0.5" />
+                    </a>
+                  </li>
+                  <li><strong>"Create API Key"</strong> বাটনে ক্লিক করে একটি নতুন কি কপি করুন।</li>
+                  <li>নিচের বক্সে পেস্ট করে <strong>"Test & Save Key"</strong> বাটনে চাপ দিন।</li>
+                </ol>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Gemini API Key (AIzaSy...):
+                </label>
+                <input
+                  type="text"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-mono text-slate-900 focus:outline-none focus:bg-white focus:border-purple-600 transition"
+                />
+              </div>
+
+              {testResult && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-start space-x-2 ${
+                    testResult.success
+                      ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-900 border border-rose-200'
+                  }`}
+                >
+                  {testResult.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  )}
+                  <span className="leading-relaxed font-medium">{testResult.message}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  sounds.playTap();
+                  setShowKeyModal(false);
+                  setTestResult(null);
+                }}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                বন্ধ করুন
+              </button>
+              <button
+                type="button"
+                onClick={handleTestAndSaveKey}
+                disabled={isTestingKey}
+                className="flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-md shadow-purple-600/20 transition cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isTestingKey ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>টেস্ট করা হচ্ছে...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Test & Save Key</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

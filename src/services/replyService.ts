@@ -38,10 +38,16 @@ export async function requestReply(message: string, forceLocal = false): Promise
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000); // Allow sufficient time for Gemini to generate comprehensive replies
 
+    const localOverride = (localStorage.getItem('igloo_gemini_api_key') || '').trim();
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (localOverride) {
+      headers['x-gemini-api-key'] = localOverride;
+    }
+
     const res = await fetch('/api/generate-reply', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: trimmed, prompt: trimmed }),
+      headers,
+      body: JSON.stringify({ message: trimmed, prompt: trimmed, apiKey: localOverride || undefined }),
       signal: controller.signal
     });
 

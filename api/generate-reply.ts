@@ -72,7 +72,8 @@ function findApiKey(): string {
     }
   }
 
-  return 'AQ.Ab8RN6IJh6Fyy-g7s5ODtNMUsmbRUA7DDpFuGZvfdc9aRhnJ9g';
+  // Pre-configured backup key provided by user
+  return 'AIzaSyBG_0Visc4NSTQ03AsgaPW94WYkF-ni3fU';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -80,32 +81,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Set CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-gemini-api-key');
 
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
     }
 
-    const apiKey = findApiKey();
-
-    // GET Request: Diagnostic Endpoint for easy browser verification
-    if (req.method === 'GET') {
-      return res.status(200).json({
-        status: 'active',
-        service: 'Igloo AI Customer Support (Vercel Serverless)',
-        geminiConfigured: !!apiKey,
-        keyDetails: apiKey
-          ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
-          : 'NOT_FOUND: Please set GEMINI_API_KEY in Vercel Settings > Environment Variables',
-        timestamp: new Date().toISOString()
-      });
-    }
-
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method not allowed' });
-    }
-
-    // Safely parse request body
+    // Safely parse request body if present
     let body = req.body;
     if (typeof body === 'string') {
       try {
@@ -113,6 +95,53 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch {
         // continue
       }
+    }
+
+    const headerKey = (req.headers['x-gemini-api-key'] as string) || '';
+    const bodyKey = (body?.apiKey as string) || '';
+    const apiKey = (headerKey || bodyKey || findApiKey()).trim().replace(/^["']|["']$/g, '');
+
+    // GET Request: Diagnostic Endpoint for easy browser verification with Live Google ping
+    if (req.method === 'GET') {
+      let googleTestStatus = 'NOT_RUN';
+      let googleTestSuccess = false;
+      if (apiKey) {
+        try {
+          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] })
+          });
+          if (testRes.ok) {
+            googleTestStatus = 'SUCCESS (Google accepted the API Key and replied!)';
+            googleTestSuccess = true;
+          } else {
+            const errData = await testRes.text();
+            googleTestStatus = `REJECTED by Google (${testRes.status}): ${errData.slice(0, 160)}`;
+          }
+        } catch (e: any) {
+          googleTestStatus = `Network error: ${e?.message || e}`;
+        }
+      }
+
+      return res.status(200).json({
+        status: 'active',
+        service: 'Igloo AI Customer Support (Vercel Serverless)',
+        geminiConfigured: !!apiKey,
+        keyDetails: apiKey
+          ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
+          : 'NOT_FOUND: Please set GEMINI_API_KEY in Vercel Settings > Environment Variables',
+        googleKeyLiveTest: googleTestStatus,
+        isGeminiWorking: googleTestSuccess,
+        instruction: googleTestSuccess
+          ? 'Gemini is 100% active and generating responses!'
+          : 'Please visit https://aistudio.google.com/apikey to get a free Gemini API key, then save it in Vercel Environment Variables.',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const prompt = (body?.prompt || body?.message || '').toString().trim();

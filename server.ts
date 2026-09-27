@@ -17,7 +17,12 @@ const PORT = Number(process.env.PORT) || 3000;
 app.use(express.json());
 
 // Initialize Gemini client using modern @google/genai SDK
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey =
+  process.env.GEMINI_API_KEY ||
+  process.env.GOOGLE_GENAI_API_KEY ||
+  process.env.VITE_GEMINI_API_KEY ||
+  process.env.API_KEY ||
+  'AIzaSyBG_0Visc4NSTQ03AsgaPW94WYkF-ni3fU';
 let ai: GoogleGenAI | null = null;
 if (apiKey) {
   try {
@@ -639,7 +644,7 @@ app.get('/api/generate-reply', (req, res) => {
     process.env.VITE_GEMINI_API_KEY ||
     process.env.API_KEY ||
     process.env.GOOGLE_API_KEY ||
-    '';
+    'AIzaSyBG_0Visc4NSTQ03AsgaPW94WYkF-ni3fU';
   const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
 
   return res.json({
