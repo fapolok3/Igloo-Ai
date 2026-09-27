@@ -22,9 +22,9 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'faqs' as TabType, label: 'FAQs', icon: HelpCircle }
   ];
 
-  // Settings tab is visible only if role is super_admin for managing users
+  // Settings tab is visible only if role is super_admin for managing users & Gemini configuration
   if (userRole === 'super_admin') {
-    tabs.push({ id: 'settings' as TabType, label: 'User Admin', icon: Settings2 });
+    tabs.push({ id: 'settings' as TabType, label: 'Super Admin', icon: Settings2 });
   }
 
   const handleTabClick = (tabId: TabType) => {

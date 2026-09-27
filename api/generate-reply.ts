@@ -72,8 +72,7 @@ function findApiKey(): string {
     }
   }
 
-  // Pre-configured backup key provided by user
-  return 'AIzaSyBG_0Visc4NSTQ03AsgaPW94WYkF-ni3fU';
+  return '';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

@@ -15,7 +15,14 @@ import {
   UserX,
   Pencil,
   X,
-  Save
+  Save,
+  Sparkles,
+  Key,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  ClipboardPaste,
+  RefreshCw
 } from 'lucide-react';
 import {
   getStoredUsers,
@@ -32,6 +39,7 @@ interface SettingsUserManagementProps {
 }
 
 export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ currentUser }) => {
+  const [activeAdminSubTab, setActiveAdminSubTab] = useState<'users' | 'gemini'>('users');
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -39,6 +47,13 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   const [role, setRole] = useState<'user' | 'super_admin'>('user');
   const [showPassword, setShowPassword] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Gemini AI Key Management State (Super Admin Exclusive)
+  const [geminiKeyInput, setGeminiKeyInput] = useState(() => localStorage.getItem('igloo_gemini_api_key') || '');
+  const [savedGeminiKey, setSavedGeminiKey] = useState(() => localStorage.getItem('igloo_gemini_api_key') || '');
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestStatus, setKeyTestStatus] = useState<{ success: boolean; message: string } | null>(null);
 
   // Edit User State
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
@@ -160,6 +175,106 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     }
   };
 
+  // Gemini AI Key Handlers (Super Admin Exclusive)
+  const handleTestKey = async () => {
+    const key = geminiKeyInput.trim();
+    if (!key) {
+      setKeyTestStatus({
+        success: false,
+        message: 'দয়া করে টেস্ট করার জন্য একটি API Key লিখুন বা পেস্ট করুন।'
+      });
+      sounds.playTap();
+      return;
+    }
+
+    setIsTestingKey(true);
+    setKeyTestStatus(null);
+    sounds.playTap();
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'ping' }] }] })
+        }
+      );
+
+      if (res.ok) {
+        setKeyTestStatus({
+          success: true,
+          message: 'অভিনন্দন! গুগল এই API Key সফলভাবে গ্রহণ করেছে। জেমিনাই রেসপন্স তৈরি করতে সক্ষম।'
+        });
+        sounds.playSuccess();
+      } else {
+        const errText = await res.text();
+        let msg = 'গুগল এই Key-টি প্রত্যাখ্যান করেছে (API Key Invalid)।';
+        if (errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
+          msg = 'এই Key টি বৈধ নয়। গুগল এআই স্টুডিও (aistudio.google.com/apikey) থেকে একটি নতুন ফ্রি Key তৈরি করুন।';
+        }
+        setKeyTestStatus({ success: false, message: msg });
+        sounds.playError();
+      }
+    } catch (err: any) {
+      setKeyTestStatus({ success: false, message: `নেটওয়ার্ক সমস্যা: ${err?.message || err}` });
+      sounds.playError();
+    } finally {
+      setIsTestingKey(false);
+    }
+  };
+
+  const handleSaveGeminiKey = () => {
+    const key = geminiKeyInput.trim();
+    sounds.playTap();
+    if (key) {
+      localStorage.setItem('igloo_gemini_api_key', key);
+      setSavedGeminiKey(key);
+      sounds.playSuccess();
+      setStatusMsg({
+        type: 'success',
+        text: 'Gemini API Key সফলভাবে সেভ করা হয়েছে! এখন সমস্ত ইউজার এই কী-র মাধ্যমে AI রিপ্লাই পাবে।'
+      });
+    } else {
+      localStorage.removeItem('igloo_gemini_api_key');
+      setSavedGeminiKey('');
+      sounds.playSuccess();
+      setStatusMsg({
+        type: 'success',
+        text: 'Custom Gemini API Key মুছে ফেলা হয়েছে।'
+      });
+    }
+    setTimeout(() => setStatusMsg(null), 4000);
+  };
+
+  const handleClearGeminiKey = () => {
+    sounds.playTap();
+    localStorage.removeItem('igloo_gemini_api_key');
+    setSavedGeminiKey('');
+    setGeminiKeyInput('');
+    setKeyTestStatus(null);
+    sounds.playSuccess();
+    setStatusMsg({
+      type: 'success',
+      text: 'Custom Gemini Key মুছে ফেলা হয়েছে।'
+    });
+    setTimeout(() => setStatusMsg(null), 3000);
+  };
+
+  const handlePasteKey = async () => {
+    try {
+      if (navigator.clipboard) {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          setGeminiKeyInput(text.trim());
+          sounds.playTap();
+        }
+      }
+    } catch (e) {
+      console.warn('Clipboard read failed:', e);
+    }
+  };
+
   return (
     <div className="space-y-5 pb-36 sm:pb-12 animate-in fade-in duration-150">
       {/* Top Banner */}
@@ -175,13 +290,57 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
               </span>
             </div>
             <h2 className="text-base sm:text-lg font-black text-slate-900 mt-0.5">
-              User Management & Access Control
+              Super Admin Settings & AI Control
             </h2>
             <p className="text-xs text-slate-500 font-medium">
-              Create and manage official support executive accounts
+              Manage executive accounts and configure Gemini AI API Key
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Sub-Navigation Tabs */}
+      <div className="flex bg-slate-200/80 p-1.5 rounded-2xl gap-1.5">
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playTap();
+            setActiveAdminSubTab('users');
+          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition cursor-pointer select-none flex items-center justify-center space-x-2 ${
+            activeAdminSubTab === 'users'
+              ? 'bg-white text-purple-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>User Accounts ({users.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            sounds.playTap();
+            setActiveAdminSubTab('gemini');
+          }}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black transition cursor-pointer select-none flex items-center justify-center space-x-2 ${
+            activeAdminSubTab === 'gemini'
+              ? 'bg-white text-purple-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/60'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-purple-600" />
+          <span>Gemini AI Key Setup</span>
+          {savedGeminiKey ? (
+            <span className="inline-flex items-center px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] rounded-full font-bold ml-1">
+              Active
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-full font-medium ml-1">
+              Server Env
+            </span>
+          )}
+        </button>
       </div>
 
       {/* Notification Toast/Alert */}
@@ -202,12 +361,145 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
         </div>
       )}
 
-      {/* Create New User Form */}
-      <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-md space-y-4">
-        <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
-          <UserPlus className="w-5 h-5 text-purple-600" />
-          <h3 className="text-sm font-black text-slate-900">Add New User Account</h3>
+      {/* TAB 1: GEMINI AI API KEY CONFIGURATION (SUPER ADMIN ONLY) */}
+      {activeAdminSubTab === 'gemini' && (
+        <div className="space-y-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/90 shadow-md space-y-4">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-purple-100 text-purple-700 rounded-xl">
+                  <Key className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm sm:text-base font-black text-slate-900">
+                  Gemini API Key Setup
+                </h3>
+              </div>
+
+              {savedGeminiKey && (
+                <button
+                  type="button"
+                  onClick={handleClearGeminiKey}
+                  className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 text-xs font-bold transition cursor-pointer"
+                >
+                  Clear Key
+                </button>
+              )}
+            </div>
+
+            {/* Current Active Status */}
+            <div className="flex items-center space-x-2 text-xs font-bold py-1">
+              {savedGeminiKey ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span className="text-slate-800">
+                    Active Key: <code className="bg-purple-50 px-2 py-0.5 rounded border border-purple-200 text-purple-900 font-mono">{savedGeminiKey.slice(0, 8)}... ({savedGeminiKey.length} chars)</code>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="text-slate-500">
+                    Status: Server Default (GEMINI_API_KEY)
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Input Field */}
+            <div className="space-y-3">
+              <div className="relative">
+                <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showGeminiKey ? 'text' : 'password'}
+                  value={geminiKeyInput}
+                  onChange={(e) => setGeminiKeyInput(e.target.value)}
+                  placeholder="Paste Gemini API Key here (AIzaSy...)"
+                  className="w-full pl-10 pr-24 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition"
+                />
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+                  <button
+                    type="button"
+                    onClick={handlePasteKey}
+                    className="p-1.5 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-xl transition text-[11px] font-bold flex items-center space-x-1 cursor-pointer"
+                    title="Paste from clipboard"
+                  >
+                    <ClipboardPaste className="w-3.5 h-3.5" />
+                    <span>Paste</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowGeminiKey(!showGeminiKey)}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                    title={showGeminiKey ? 'Hide key' : 'Show key'}
+                  >
+                    {showGeminiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Real-time Google Test Status */}
+              {keyTestStatus && (
+                <div
+                  className={`p-3 rounded-2xl text-xs flex items-center space-x-2 animate-in fade-in duration-150 ${
+                    keyTestStatus.success
+                      ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                      : 'bg-rose-50 text-rose-900 border border-rose-200'
+                  }`}
+                >
+                  {keyTestStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span className="font-semibold">{keyTestStatus.message}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleTestKey}
+                  disabled={isTestingKey || !geminiKeyInput.trim()}
+                  className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-800 rounded-2xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {isTestingKey ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Testing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 text-purple-600" />
+                      <span>Test Key</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSaveGeminiKey}
+                  className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-xs font-black shadow-md shadow-purple-500/20 transition active:scale-95 flex items-center space-x-1.5 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Save Key</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* TAB 2: USER MANAGEMENT (SUPER ADMIN ONLY) */}
+      {activeAdminSubTab === 'users' && (
+        <>
+          {/* Create New User Form */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-md space-y-4">
+            <div className="flex items-center space-x-2 border-b border-slate-100 pb-3">
+              <UserPlus className="w-5 h-5 text-purple-600" />
+              <h3 className="text-sm font-black text-slate-900">Add New User Account</h3>
+            </div>
 
         <form onSubmit={handleCreateUser} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -414,6 +706,8 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
           })}
         </div>
       </div>
+      </>
+      )}
 
       {/* Edit User Modal */}
       {editingUser && (
