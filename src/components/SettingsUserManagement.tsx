@@ -177,7 +177,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
 
   // Gemini AI Key Handlers (Super Admin Exclusive)
   const handleTestKey = async () => {
-    const key = geminiKeyInput.trim();
+    const key = geminiKeyInput.trim().replace(/^["']|["']$/g, '');
     if (!key) {
       setKeyTestStatus({
         success: false,
@@ -192,26 +192,50 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
     sounds.playTap();
 
     try {
+      // 1. Try server test endpoint first (bypasses browser CORS & network blocks)
+      const serverRes = await fetch('/api/test-key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: key })
+      }).catch(() => null);
+
+      if (serverRes && serverRes.ok) {
+        const data = await serverRes.json();
+        if (data.success) {
+          setKeyTestStatus({ success: true, message: data.message });
+          sounds.playSuccess();
+          return;
+        } else {
+          setKeyTestStatus({ success: false, message: data.message || 'গুগল এই Key প্রত্যাখ্যান করেছে।' });
+          sounds.playError();
+          return;
+        }
+      }
+
+      // 2. Direct fallback to Google API if server endpoint is not responding
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${key}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: 'ping' }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] })
         }
       );
 
       if (res.ok) {
         setKeyTestStatus({
           success: true,
-          message: 'অভিনন্দন! গুগল এই API Key সফলভাবে গ্রহণ করেছে। জেমিনাই রেসপন্স তৈরি করতে সক্ষম।'
+          message: 'অভিনন্দন! গুগল এই API Key সফলভাবে গ্রহণ করেছে। জেমিনাই AI সম্পূর্ণ সক্রিয়!'
         });
         sounds.playSuccess();
       } else {
-        const errText = await res.text();
-        let msg = 'গুগল এই Key-টি প্রত্যাখ্যান করেছে (API Key Invalid)।';
-        if (errText.includes('API_KEY_INVALID') || errText.includes('API key not valid')) {
-          msg = 'এই Key টি বৈধ নয়। গুগল এআই স্টুডিও (aistudio.google.com/apikey) থেকে একটি নতুন ফ্রি Key তৈরি করুন।';
+        const errJson = await res.json().catch(() => null);
+        const errMsg = errJson?.error?.message || (await res.text().catch(() => ''));
+        const reason = errJson?.error?.details?.[0]?.reason || errJson?.error?.status || '';
+
+        let msg = `গুগল প্রত্যাখ্যান করেছে: ${errMsg || `Status ${res.status}`}`;
+        if (reason === 'API_KEY_INVALID' || errMsg.includes('API key not valid')) {
+          msg = 'API Key টি সঠিক নয় বা ইনভ্যালিড। নিশ্চিত করুন এটি সরাসরি https://aistudio.google.com/apikey থেকে নেওয়া হয়েছে।';
         }
         setKeyTestStatus({ success: false, message: msg });
         sounds.playError();
@@ -225,7 +249,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
   };
 
   const handleSaveGeminiKey = () => {
-    const key = geminiKeyInput.trim();
+    const key = geminiKeyInput.trim().replace(/^["']|["']$/g, '');
     sounds.playTap();
     if (key) {
       localStorage.setItem('igloo_gemini_api_key', key);
@@ -233,7 +257,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
       sounds.playSuccess();
       setStatusMsg({
         type: 'success',
-        text: 'Gemini API Key সফলভাবে সেভ করা হয়েছে! এখন সমস্ত ইউজার এই কী-র মাধ্যমে AI রিপ্লাই পাবে।'
+        text: 'Gemini API Key সফলভাবে সেভ করা হয়েছে!'
       });
     } else {
       localStorage.removeItem('igloo_gemini_api_key');
@@ -244,7 +268,7 @@ export const SettingsUserManagement: React.FC<SettingsUserManagementProps> = ({ 
         text: 'Custom Gemini API Key মুছে ফেলা হয়েছে।'
       });
     }
-    setTimeout(() => setStatusMsg(null), 4000);
+    setTimeout(() => setStatusMsg(null), 3000);
   };
 
   const handleClearGeminiKey = () => {

@@ -106,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       let googleTestSuccess = false;
       if (apiKey) {
         try {
-          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [{ text: 'hi' }] }] })
@@ -153,10 +153,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // If API Key is present, call Google Gemini REST API directly (100% standalone, zero-dependency)
     if (apiKey) {
       const models = [
+        'gemini-3.8-flash',
         'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-2.0-flash-lite'
+        'gemini-flash-latest',
+        'gemini-3.1-flash-lite'
       ];
 
       for (const model of models) {
