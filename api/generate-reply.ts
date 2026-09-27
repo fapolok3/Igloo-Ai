@@ -72,7 +72,7 @@ function findApiKey(): string {
     }
   }
 
-  return '';
+  return 'AIzaSyBG_0Visc4NSTQ03AsgaPW94WYkF-ni3fU';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
