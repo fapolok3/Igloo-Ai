@@ -48,15 +48,28 @@ export async function requestReply(message: string, forceLocal = false): Promise
     clearTimeout(timeoutId);
 
     if (!res.ok) {
-      console.warn('Backend returned non-OK, utilizing local engine.');
-      return sanitizeReply(generateLocalReply(trimmed));
+      console.warn(`[Reply Service] Backend API returned status ${res.status}: ${res.statusText}`);
+      const fallback = generateLocalReply(trimmed);
+      fallback.debug = {
+        geminiAttempted: false,
+        geminiError: `API responded with HTTP ${res.status}`
+      };
+      return sanitizeReply(fallback);
     }
 
-    const data = await res.json();
+    const data: GeneratedReply = await res.json();
+    if (data.debug?.geminiError) {
+      console.warn('[Gemini AI Diagnostic]', data.debug.geminiError);
+    }
     return sanitizeReply(data);
-  } catch (err) {
-    console.info('Using local client-side knowledge engine (Instant offline response):', err);
-    return sanitizeReply(generateLocalReply(trimmed));
+  } catch (err: any) {
+    console.info('[Reply Service] Falling back to offline client engine:', err?.message || err);
+    const fallback = generateLocalReply(trimmed);
+    fallback.debug = {
+      geminiAttempted: false,
+      geminiError: err?.message || 'Network error or timeout'
+    };
+    return sanitizeReply(fallback);
   }
 }
 

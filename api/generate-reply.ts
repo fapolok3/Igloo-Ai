@@ -57,16 +57,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
+  // Retrieve API Key across all common variable names and clean quotes/spaces
+  const rawKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    process.env.API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    '';
+  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
+
+  // GET Request: Diagnostic Endpoint for easy browser verification
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      status: 'active',
+      service: 'Igloo AI Studio Reply Engine (Vercel Serverless)',
+      geminiConfigured: !!apiKey,
+      keyDetails: apiKey
+        ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
+        : 'NOT_FOUND: Please set GEMINI_API_KEY in Vercel Project Settings > Environment Variables',
+      timestamp: new Date().toISOString()
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const prompt = (req.body?.prompt || req.body?.message || '').toString().trim();
+  // Safely parse request body regardless of whether Vercel parsed it as object or string
+  let body = req.body;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      // body remains as string if unparseable
+    }
+  }
+
+  const prompt = (body?.prompt || body?.message || '').toString().trim();
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt or message is required' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  let geminiReply = null;
+  let lastGeminiError = '';
 
   if (apiKey) {
     let ai: GoogleGenAI | null = null;
@@ -79,8 +113,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
       });
-    } catch (e) {
-      console.error('Failed to init GoogleGenAI in serverless function:', e);
+    } catch (e: any) {
+      lastGeminiError = `GoogleGenAI Init Error: ${e?.message || e}`;
+      console.error(lastGeminiError);
     }
 
     if (ai) {
@@ -107,10 +142,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           });
 
           if (response && response.text) {
-            const parsed = JSON.parse(response.text);
+            let rawText = response.text.trim();
+            // Clean markdown code blocks if the model wrapped the JSON in ```json ... ```
+            if (rawText.startsWith('```')) {
+              rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+            }
+
+            const parsed = JSON.parse(rawText);
             const banglaClean = stripAsterisks(parsed.banglaReply);
             const englishClean = stripAsterisks(parsed.englishReply);
-            return res.json({
+            
+            geminiReply = {
               id: `reply-${Date.now()}`,
               source: 'gemini',
               matchedType: 'ai_custom_grounded',
@@ -124,18 +166,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               banglaVersion: banglaClean,
               languageDetected: 'auto',
               modelName
-            });
+            };
+            break;
           }
-        } catch (mErr) {
-          console.warn(`Vercel function model ${modelName} error:`, mErr);
+        } catch (mErr: any) {
+          lastGeminiError = `Model ${modelName} error: ${mErr?.message || mErr}`;
+          console.warn(lastGeminiError);
         }
       }
     }
   } else {
-    console.warn('GEMINI_API_KEY is not defined in environment variables on live deployment.');
+    lastGeminiError = 'GEMINI_API_KEY environment variable is missing on Vercel';
+    console.warn(lastGeminiError);
   }
 
-  // Fallback to high-performance local engine if Gemini API Key not set on live host
+  if (geminiReply) {
+    return res.json(geminiReply);
+  }
+
+  // Fallback to high-performance local engine if Gemini API Key not set or model failed
   const localResult = generateLocalReply(prompt);
   return res.json({
     ...localResult,
@@ -143,7 +192,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     shortVersion: stripAsterisks(localResult.shortVersion),
     warmVersion: stripAsterisks(localResult.warmVersion),
     englishVersion: stripAsterisks(localResult.englishVersion),
-    banglaVersion: stripAsterisks(localResult.banglaVersion)
+    banglaVersion: stripAsterisks(localResult.banglaVersion),
+    debug: {
+      geminiAttempted: !!apiKey,
+      geminiError: lastGeminiError || null
+    }
   });
 }
 

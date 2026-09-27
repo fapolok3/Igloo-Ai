@@ -17,6 +17,10 @@ export interface GeneratedReply {
   matchedProduct?: ProductItem;
   matchedFAQ?: FAQItem;
   modelName?: string;
+  debug?: {
+    geminiAttempted?: boolean;
+    geminiError?: string | null;
+  };
 }
 
 export function detectLanguage(text: string): 'bangla' | 'english' | 'banglish' {

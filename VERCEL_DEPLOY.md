@@ -47,3 +47,27 @@ Because `.env` files are ignored by Git for security, you MUST add your Gemini A
 ### 4. Click "Deploy"
 Click the **Deploy** button. Within 30 seconds, your application will be live at:
 `https://your-app-name.vercel.app`
+
+---
+
+## 🔍 How to Test & Verify in 5 Seconds:
+After deploying, simply open this URL in your web browser:
+`https://your-app-name.vercel.app/api/generate-reply`
+
+You will immediately see a diagnostic status:
+- If your key is working:
+  ```json
+  {
+    "status": "active",
+    "geminiConfigured": true,
+    "keyDetails": "AIzaSy... (39 characters loaded)"
+  }
+  ```
+- If your key is missing or not redeployed:
+  ```json
+  {
+    "status": "active",
+    "geminiConfigured": false,
+    "keyDetails": "NOT_FOUND: Please set GEMINI_API_KEY..."
+  }
+  ```

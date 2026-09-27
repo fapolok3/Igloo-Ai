@@ -624,6 +624,28 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+// Diagnostic Endpoint: Verify API status & Gemini Configuration in browser
+app.get('/api/generate-reply', (req, res) => {
+  const rawKey =
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.VITE_GEMINI_API_KEY ||
+    process.env.API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    '';
+  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
+
+  return res.json({
+    status: 'active',
+    service: 'Igloo AI Customer Support (Express Server)',
+    geminiConfigured: !!apiKey,
+    keyDetails: apiKey
+      ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
+      : 'NOT_FOUND: Please set GEMINI_API_KEY environment variable',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API Route: Generate AI Reply with Grounded Fallback
 app.post('/api/generate-reply', async (req, res) => {
   const message = (req.body?.message || req.body?.prompt || '').toString().trim();
@@ -636,7 +658,13 @@ app.post('/api/generate-reply', async (req, res) => {
 
     if (geminiResult && geminiResult.text) {
       try {
-        const parsed = JSON.parse(geminiResult.text);
+        let rawText = geminiResult.text.trim();
+        // Remove markdown ```json ``` blocks if present
+        if (rawText.startsWith('```')) {
+          rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+        }
+
+        const parsed = JSON.parse(rawText);
         const banglaClean = stripAsterisks(parsed.banglaReply);
         const englishClean = stripAsterisks(parsed.englishReply);
         const shortClean = stripAsterisks(parsed.shortVersion || parsed.banglaReply);
