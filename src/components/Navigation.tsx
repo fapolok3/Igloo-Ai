@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MessageSquareText, IceCream, HelpCircle, SlidersHorizontal } from 'lucide-react';
 import { sounds } from '../utils/audio';
 import { UserRole } from '../types/auth';
@@ -27,6 +27,61 @@ export const Navigation: React.FC<NavigationProps> = ({
     tabs.push({ id: 'settings' as TabType, label: 'Super Admin', icon: SlidersHorizontal });
   }
 
+  // Detect and set safe bottom inset for devices with on-screen Back/Home/Recent buttons
+  useEffect(() => {
+    const updateNavSafeBottom = () => {
+      try {
+        // Measure native env(safe-area-inset-bottom)
+        const testEl = document.createElement('div');
+        testEl.style.cssText =
+          'position:fixed;bottom:0;height:env(safe-area-inset-bottom, 0px);visibility:hidden;pointer-events:none;';
+        document.body.appendChild(testEl);
+        const nativeInset = testEl.offsetHeight;
+        document.body.removeChild(testEl);
+
+        if (nativeInset > 0) {
+          // Native browser safe area is active (handles 3-button or gesture bars)
+          document.documentElement.style.setProperty('--mobile-nav-safe-inset', `${nativeInset}px`);
+          return;
+        }
+
+        // Fallback for Android mobile browsers where 3 soft buttons exist but env() is 0
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isMobile = isAndroid || /iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth <= 640;
+
+        if (isAndroid || isMobile) {
+          const screenHeight = window.screen.height;
+          const innerHeight = window.innerHeight;
+          const diff = screenHeight - innerHeight;
+          const isStandalone =
+            window.matchMedia('(display-mode: standalone)').matches ||
+            (window.navigator as any).standalone;
+
+          if (isStandalone && diff >= 36) {
+            document.documentElement.style.setProperty('--mobile-nav-safe-inset', '52px');
+          } else if (diff >= 44 && diff <= 130) {
+            // Android on-screen soft navigation bar (Back, Home, Recent) active
+            document.documentElement.style.setProperty('--mobile-nav-safe-inset', '48px');
+          } else {
+            document.documentElement.style.setProperty('--mobile-nav-safe-inset', '0px');
+          }
+        } else {
+          document.documentElement.style.setProperty('--mobile-nav-safe-inset', '0px');
+        }
+      } catch (e) {
+        document.documentElement.style.setProperty('--mobile-nav-safe-inset', '0px');
+      }
+    };
+
+    updateNavSafeBottom();
+    window.addEventListener('resize', updateNavSafeBottom);
+    window.addEventListener('orientationchange', updateNavSafeBottom);
+    return () => {
+      window.removeEventListener('resize', updateNavSafeBottom);
+      window.removeEventListener('orientationchange', updateNavSafeBottom);
+    };
+  }, []);
+
   const handleTabClick = (tabId: TabType) => {
     sounds.playTap();
     if (navigator.vibrate) navigator.vibrate(25);
@@ -34,7 +89,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   };
 
   return (
-    <nav className="fixed bottom-3 inset-x-2.5 sm:inset-x-4 max-w-md mx-auto z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-[28px] shadow-xl shadow-purple-950/15 p-1.5 sm:p-2 select-none touch-manipulation">
+    <nav
+      className="fixed inset-x-2.5 sm:inset-x-4 max-w-md mx-auto z-50 bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-[28px] shadow-xl shadow-purple-950/15 p-1.5 sm:p-2 select-none touch-manipulation transition-[bottom] duration-150 ease-out"
+      style={{
+        bottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--mobile-nav-safe-inset, 0px)) + 12px)'
+      }}
+    >
       <div
         className={`grid items-center w-full ${
           tabs.length === 4 ? 'grid-cols-4' : 'grid-cols-3'

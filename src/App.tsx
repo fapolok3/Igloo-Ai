@@ -112,7 +112,12 @@ export default function App() {
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-3.5 w-full mx-auto pb-24">
+        <main
+          className="flex-1 p-3.5 w-full mx-auto"
+          style={{
+            paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--mobile-nav-safe-inset, 0px)) + 5.5rem)'
+          }}
+        >
           {activeTab === 'generator' && (
             <ReplyGenerator
               initialQuery={initialQueryForGenerator}
