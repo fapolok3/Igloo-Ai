@@ -1,6 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI } from '@google/genai';
-import { generateLocalReply } from '../src/services/localEngine';
 
 function stripAsterisks(text: string | undefined | null): string {
   if (!text) return '';
@@ -47,19 +45,8 @@ Return ONLY a valid JSON object matching this exact schema (NO asterisks **):
 }
 `;
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Set CORS headers for API calls
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  // Retrieve API Key across all common variable names, key-name fallback, and clean quotes/spaces
-  let apiKey = '';
-  const knownKeys = [
+function findApiKey(): string {
+  const candidateKeys = [
     'GEMINI_API_KEY',
     'GOOGLE_GENAI_API_KEY',
     'VITE_GEMINI_API_KEY',
@@ -67,171 +54,198 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     'GOOGLE_API_KEY',
     'GEMINI_KEY'
   ];
-  for (const k of knownKeys) {
-    if (process.env[k] && typeof process.env[k] === 'string' && process.env[k]!.trim()) {
-      apiKey = process.env[k]!.trim().replace(/^["']|["']$/g, '');
-      break;
+
+  for (const k of candidateKeys) {
+    const val = process.env[k];
+    if (val && typeof val === 'string' && val.trim()) {
+      return val.trim().replace(/^["']|["']$/g, '');
     }
   }
 
-  // Fallback: If user pasted API key as the Key name in Vercel
-  if (!apiKey) {
-    for (const k of Object.keys(process.env)) {
-      if (k.trim().startsWith('AIzaSy')) {
-        apiKey = k.trim().replace(/^["']|["']$/g, '');
-        break;
-      }
+  // Check if any process.env key or value starts with AIzaSy (common copy-paste in Vercel UI)
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k.trim().startsWith('AIzaSy')) {
+      return k.trim().replace(/^["']|["']$/g, '');
+    }
+    if (typeof v === 'string' && v.trim().startsWith('AIzaSy')) {
+      return v.trim().replace(/^["']|["']$/g, '');
     }
   }
 
-  // Fallback: Check if any process.env value starts with AIzaSy
-  if (!apiKey) {
-    for (const [k, v] of Object.entries(process.env)) {
-      if (typeof v === 'string' && v.trim().startsWith('AIzaSy')) {
-        apiKey = v.trim().replace(/^["']|["']$/g, '');
-        break;
-      }
+  return '';
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  try {
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+      return res.status(200).end();
     }
-  }
 
-  // GET Request: Diagnostic Endpoint for easy browser verification
-  if (req.method === 'GET') {
-    return res.status(200).json({
-      status: 'active',
-      service: 'Igloo AI Studio Reply Engine (Vercel Serverless)',
-      geminiConfigured: !!apiKey,
-      keyDetails: apiKey
-        ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
-        : 'NOT_FOUND: Please set GEMINI_API_KEY in Vercel Project Settings > Environment Variables',
-      timestamp: new Date().toISOString()
-    });
-  }
+    const apiKey = findApiKey();
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  // Safely parse request body regardless of whether Vercel parsed it as object or string
-  let body = req.body;
-  if (typeof body === 'string') {
-    try {
-      body = JSON.parse(body);
-    } catch {
-      // body remains as string if unparseable
-    }
-  }
-
-  const prompt = (body?.prompt || body?.message || '').toString().trim();
-  if (!prompt) {
-    return res.status(400).json({ error: 'Prompt or message is required' });
-  }
-
-  let geminiReply = null;
-  let lastGeminiError = '';
-
-  if (apiKey) {
-    let ai: GoogleGenAI | null = null;
-    try {
-      ai = new GoogleGenAI({
-        apiKey,
-        httpOptions: {
-          headers: {
-            'User-Agent': 'aistudio-build'
-          }
-        }
+    // GET Request: Diagnostic Endpoint for easy browser verification
+    if (req.method === 'GET') {
+      return res.status(200).json({
+        status: 'active',
+        service: 'Igloo AI Customer Support (Vercel Serverless)',
+        geminiConfigured: !!apiKey,
+        keyDetails: apiKey
+          ? `${apiKey.slice(0, 8)}... (${apiKey.length} characters loaded)`
+          : 'NOT_FOUND: Please set GEMINI_API_KEY in Vercel Settings > Environment Variables',
+        timestamp: new Date().toISOString()
       });
-    } catch (e: any) {
-      lastGeminiError = `GoogleGenAI Init Error: ${e?.message || e}`;
-      console.error(lastGeminiError);
     }
 
-    if (ai) {
-      // Universal model list: standard free tier keys support gemini-2.5-flash and gemini-2.0-flash
-      const modelCandidates = [
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Safely parse request body
+    let body = req.body;
+    if (typeof body === 'string') {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        // continue
+      }
+    }
+
+    const prompt = (body?.prompt || body?.message || '').toString().trim();
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt or message is required' });
+    }
+
+    let lastError = '';
+
+    // If API Key is present, call Google Gemini REST API directly (100% standalone, zero-dependency)
+    if (apiKey) {
+      const models = [
         'gemini-2.5-flash',
         'gemini-2.0-flash',
-        'gemini-flash-latest',
         'gemini-1.5-flash',
-        'gemini-3.8-flash',
-        'gemini-3.1-flash-lite'
+        'gemini-2.0-flash-lite'
       ];
-      for (const modelName of modelCandidates) {
+
+      for (const model of models) {
         try {
-          const response = await ai.models.generateContent({
-            model: modelName,
+          const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          
+          const payload = {
+            system_instruction: {
+              parts: [{ text: SYSTEM_INSTRUCTION }]
+            },
             contents: [
               {
                 role: 'user',
                 parts: [
                   {
-                    text: `${KNOWLEDGE_BASE_CONTEXT}\n\n=== CUSTOMER MESSAGE / TOPIC REQUEST ===\n"${prompt}"\n\nGenerate the structured JSON reply according to instructions (DO NOT use any asterisks **). If this is a general topic or outside the KB, write a rich, complete, empathetic customer support reply as an intelligent Gemini AI.`
+                    text: `${KNOWLEDGE_BASE_CONTEXT}\n\n=== CUSTOMER MESSAGE / TOPIC REQUEST ===\n"${prompt}"\n\nGenerate structured JSON reply strictly according to the format (NO asterisks **).`
                   }
                 ]
               }
             ],
-            config: {
-              systemInstruction: SYSTEM_INSTRUCTION,
-              responseMimeType: 'application/json',
+            generationConfig: {
+              response_mime_type: 'application/json',
               temperature: 0.35
             }
+          };
+
+          const geminiRes = await fetch(geminiEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
           });
 
-          if (response && response.text) {
-            let rawText = response.text.trim();
-            // Clean markdown code blocks if the model wrapped the JSON in ```json ... ```
-            if (rawText.startsWith('```')) {
-              rawText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-            }
+          if (geminiRes.ok) {
+            const data: any = await geminiRes.json();
+            const textResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (textResponse) {
+              let cleanedText = textResponse.trim();
+              if (cleanedText.startsWith('```')) {
+                cleanedText = cleanedText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+              }
 
-            const parsed = JSON.parse(rawText);
-            const banglaClean = stripAsterisks(parsed.banglaReply);
-            const englishClean = stripAsterisks(parsed.englishReply);
-            
-            geminiReply = {
-              id: `reply-${Date.now()}`,
-              source: 'gemini',
-              matchedType: 'ai_custom_grounded',
-              confidence: 0.99,
-              matchedEntityName: stripAsterisks(parsed.matchedEntity || 'Igloo Customer Support'),
-              query: prompt,
-              approvedScript: banglaClean,
-              shortVersion: stripAsterisks(parsed.shortVersion || parsed.banglaReply),
-              warmVersion: stripAsterisks(parsed.warmVersion || parsed.banglaReply),
-              englishVersion: englishClean,
-              banglaVersion: banglaClean,
-              languageDetected: 'auto',
-              modelName
-            };
-            break;
+              const parsed = JSON.parse(cleanedText);
+              const banglaClean = stripAsterisks(parsed.banglaReply);
+              const englishClean = stripAsterisks(parsed.englishReply);
+
+              return res.status(200).json({
+                id: `reply-${Date.now()}`,
+                source: 'gemini',
+                matchedType: 'ai_custom_grounded',
+                confidence: 0.99,
+                matchedEntityName: stripAsterisks(parsed.matchedEntity || 'Igloo Customer Support'),
+                query: prompt,
+                approvedScript: banglaClean,
+                shortVersion: stripAsterisks(parsed.shortVersion || parsed.banglaReply),
+                warmVersion: stripAsterisks(parsed.warmVersion || parsed.banglaReply),
+                englishVersion: englishClean,
+                banglaVersion: banglaClean,
+                languageDetected: 'auto',
+                modelName: model
+              });
+            }
+          } else {
+            const errBody = await geminiRes.text();
+            lastError = `Gemini API returned ${geminiRes.status}: ${errBody}`;
+            console.warn(`[Gemini REST Error ${model}]`, lastError);
           }
         } catch (mErr: any) {
-          lastGeminiError = `Model ${modelName} error: ${mErr?.message || mErr}`;
-          console.warn(lastGeminiError);
+          lastError = mErr?.message || String(mErr);
+          console.warn(`[Gemini Attempt Error ${model}]`, lastError);
         }
       }
+    } else {
+      lastError = 'GEMINI_API_KEY environment variable is not defined on Vercel';
     }
-  } else {
-    lastGeminiError = 'GEMINI_API_KEY environment variable is missing on Vercel';
-    console.warn(lastGeminiError);
-  }
 
-  if (geminiReply) {
-    return res.json(geminiReply);
-  }
+    // High reliability fallback response if Gemini is unavailable
+    const fallbackBangla = `ধন্যবাদ ইগলু আইসক্রিম-এর সাথে যোগাযোগ করার জন্য। আপনার অনুসন্ধান ("${prompt}") আমরা গ্রহণ করেছি। ডেলিভারি, প্রোডাক্টের দাম বা অন্য যেকোনো তথ্যের জন্য আমাদের হটলাইন ১৬৫৫৬ (সকাল ৯টা - সন্ধ্যা ৬টা) অথবা ভিজিট করুন: https://igloobd.com/। ঢাকা মেট্রো এলাকায় রয়েছে ফ্রি হোম ডেলিভারি সুবিধা।`;
+    const fallbackEnglish = `Thank you for reaching out to Igloo Ice Cream. We have received your query ("${prompt}"). For delivery details, product availability, or any queries, please call our helpline 16556 (9:00 AM - 6:00 PM) or visit: https://igloobd.com/. Free home delivery is available across Dhaka Metro.`;
 
-  // Fallback to high-performance local engine if Gemini API Key not set or model failed
-  const localResult = generateLocalReply(prompt);
-  return res.json({
-    ...localResult,
-    approvedScript: stripAsterisks(localResult.approvedScript),
-    shortVersion: stripAsterisks(localResult.shortVersion),
-    warmVersion: stripAsterisks(localResult.warmVersion),
-    englishVersion: stripAsterisks(localResult.englishVersion),
-    banglaVersion: stripAsterisks(localResult.banglaVersion),
-    debug: {
-      geminiAttempted: !!apiKey,
-      geminiError: lastGeminiError || null
-    }
-  });
+    return res.status(200).json({
+      id: `fallback-${Date.now()}`,
+      source: 'local_rule_engine',
+      matchedType: 'general',
+      confidence: 0.85,
+      matchedEntityName: 'Igloo Customer Care',
+      query: prompt,
+      approvedScript: fallbackBangla,
+      shortVersion: 'যেকোনো তথ্যের জন্য কল করুন ১৬৫৫৬ অথবা ভিজিট করুন igloobd.com (ঢাকা মেট্রোতে ফ্রি ডেলিভারি)।',
+      warmVersion: `ইগলুর পক্ষ থেকে শুভেচ্ছা! আপনার প্রশ্নের উত্তর জানতে আমাদের হেল্পলাইন ১৬৫৫৬-এ যোগাযোগ করতে পারেন। আমরা সবসময় আপনার সেবায় প্রস্তুত।`,
+      englishVersion: fallbackEnglish,
+      banglaVersion: fallbackBangla,
+      languageDetected: 'auto',
+      debug: {
+        geminiAttempted: !!apiKey,
+        geminiError: lastError || null
+      }
+    });
+  } catch (fatalError: any) {
+    console.error('[Vercel Handler Fatal Catch]', fatalError);
+    return res.status(200).json({
+      id: `safe-${Date.now()}`,
+      source: 'local_rule_engine',
+      matchedType: 'general',
+      confidence: 0.8,
+      matchedEntityName: 'Igloo Customer Support',
+      query: 'Query',
+      approvedScript: 'ইগলু আইসক্রিমে যোগাযোগ করার জন্য ধন্যবাদ। বিস্তারিত জানতে কল করুন ১৬৫৫৬ অথবা ভিজিট করুন igloobd.com।',
+      shortVersion: 'কল করুন ১৬৫৫৬ অথবা ভিজিট করুন igloobd.com',
+      warmVersion: 'ইগলু বেছে নেওয়ার জন্য ধন্যবাদ! যেকোনো তথ্যে আমরা আপনার পাশে আছি।',
+      englishVersion: 'Thank you for contacting Igloo Ice Cream. For details, please call 16556 or visit igloobd.com.',
+      banglaVersion: 'ইগলু আইসক্রিমে যোগাযোগ করার জন্য ধন্যবাদ। বিস্তারিত জানতে কল করুন ১৬৫৫৬ অথবা ভিজিট করুন igloobd.com।',
+      languageDetected: 'auto',
+      debug: {
+        fatal: fatalError?.message || String(fatalError)
+      }
+    });
+  }
 }
-
