@@ -69,9 +69,53 @@ const OUTSIDE_DHAKA_AREAS = [
   'brahmanbaria', 'ব্রাহ্মণবাড়িয়া'
 ];
 
+function checkInstructionPrompt(query: string): string | null {
+  const norm = query.trim();
+  const lower = norm.toLowerCase();
+
+  const instructionRegexes = [
+    /^(?:amake|amk)\s+(?:ai\s+vabe|ei\s+bhabe|evabe|eivabe|erokom|erkm)\s+(?:akta\s+)?reply\s+(?:likha\s+daw|likhe\s+dao|banai\s+daw|dao|daw)\s*(?:je|j|:|,|-)?\s*(.*)/i,
+    /^(?:আমাকে|আমারে)\s+(?:এইভাবে|এভাবে|এমনভাবে|একটা)\s+(?:রিপ্লাই|উত্তর|মেসেজ)\s+(?:লিখে\s+দাও|বানিয়ে\s+দাও|দিন|দাও)\s*(?:যে|:|,|-)?\s*(.*)/i,
+    /^(?:customer|cust)\s*(?:k|ke)\s*(?:bolo|bolun|bhalo\s+kore\s+bolo)\s*(?:je|j|:|,|-)\s*(.*)/i,
+    /^(?:কাস্টমারকে|গ্রাহককে)\s*(?:বলুন|বলো)\s*(?:যে|:|,|-)\s*(.*)/i,
+    /^(?:write|draft|create|generate)\s+(?:a\s+)?(?:reply|response|message)\s+(?:saying|stating|explaining|that)\s*(?:that|:|,|-)?\s*(.*)/i,
+    /^(?:bolo|bolen|bolte\s+hobe|janan|janate\s+hobe)\s+(?:je|j)\s*(.*)/i,
+    /^(?:বলুন|বলো|জানান|জানাতে\s+হবে)\s+(?:যে)\s*(.*)/i
+  ];
+
+  for (const regex of instructionRegexes) {
+    const match = norm.match(regex);
+    if (match && match[1] && match[1].trim().length > 2) {
+      return match[1].trim();
+    }
+  }
+
+  if (
+    lower.includes('reply likha daw') ||
+    lower.includes('reply likhe dao') ||
+    lower.includes('রিপ্লাই লিখে দাও') ||
+    lower.includes('রিপ্লাই লিখে দিন') ||
+    lower.includes('reply daw je') ||
+    lower.includes('reply dao je')
+  ) {
+    const parts = norm.split(/(?:reply\s+(?:likha\s+daw|likhe\s+dao|daw|dao)|রিপ্লাই\s+(?:লিখে\s+দাও|লিখে\s+দিন|দাও))\s*(?:je|j|যে)?\s*/i);
+    if (parts.length > 1 && parts[1].trim()) {
+      return parts[1].trim();
+    }
+  }
+
+  return null;
+}
+
 export function generateLocalReply(query: string): GeneratedReply {
   const normQuery = normalize(query);
   const lang = detectLanguage(query);
+
+  // 0. Check if user/agent provided a custom instruction on how to reply
+  const customInstruction = checkInstructionPrompt(query);
+  if (customInstruction) {
+    return formatCustomInstructionReply(query, customInstruction, lang);
+  }
 
   // 1. Check for Outside Dhaka explicitly mentioned
   for (const outArea of OUTSIDE_DHAKA_AREAS) {
@@ -166,6 +210,49 @@ export function generateLocalReply(query: string): GeneratedReply {
 
   // 7. Intelligent Grounded Escalation / General Response
   return generateEscalationReply(query, lang);
+}
+
+function formatCustomInstructionReply(query: string, instructionContent: string, lang: 'bangla' | 'english' | 'banglish'): GeneratedReply {
+  const banglaReply = `প্রিয় গ্রাহক,
+
+ইগলুর সাথে যোগাযোগ করার জন্য আন্তরিক ধন্যবাদ।
+
+${instructionContent}
+
+আমাদের যেকোনো পণ্য, অফার বা সার্ভিস সম্পর্কিত তথ্যের জন্য ভিজিট করুন আমাদের ওয়েবসাইট: https://igloobd.com/ অথবা সরাসরি কল করুন আমাদের হেল্পলাইন ১৬৫৫৬ নম্বরে।
+
+ইগলুর সাথে থাকার জন্য ধন্যবাদ।`;
+
+  const englishReply = `Dear Valued Customer,
+
+Thank you for contacting Igloo Ice Cream.
+
+${instructionContent}
+
+For any inquiries, product catalog or online ordering, please visit our website: https://igloobd.com/ or contact our helpline at 16556.
+
+Thank you for choosing Igloo.`;
+
+  const shortBn = `প্রিয় গ্রাহক, ${instructionContent} বিস্তারিত তথ্যের জন্য ভিজিট করুন igloobd.com অথবা কল করুন ১৬৫৫৬। ধন্যবাদ।`;
+  const shortEn = `Dear Valued Customer, ${instructionContent} For details visit igloobd.com or call 16556. Thank you.`;
+
+  const warmBn = `প্রিয় গ্রাহক, ইগলুর সাথে থাকার জন্য আন্তরিক ধন্যবাদ! 🍦 ${instructionContent} যেকোনো প্রয়োজনে আমরা সবসময় আপনার পাশে আছি। ❤️ হেল্পলাইন: ১৬৫৫৬`;
+  const warmEn = `Dear Valued Customer, thank you for reaching out to Igloo! 🍦 ${instructionContent} We are always here to assist you. ❤️ Helpline: 16556`;
+
+  return {
+    id: `reply-${Date.now()}`,
+    source: 'local_rule_engine',
+    matchedType: 'ai_custom_grounded',
+    confidence: 0.99,
+    matchedEntityName: 'Custom Agent Reply Instruction',
+    query,
+    approvedScript: removeMarkdownAsterisks(banglaReply),
+    shortVersion: removeMarkdownAsterisks(shortBn),
+    warmVersion: removeMarkdownAsterisks(warmBn),
+    englishVersion: removeMarkdownAsterisks(englishReply),
+    banglaVersion: removeMarkdownAsterisks(banglaReply),
+    languageDetected: lang
+  };
 }
 
 function formatDhakaAreaSpecificReply(query: string, areaEn: string, areaBn: string, lang: 'bangla' | 'english' | 'banglish'): GeneratedReply {
