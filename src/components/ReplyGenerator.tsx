@@ -264,7 +264,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ initialQuery }) 
                 handleGenerate();
               }
             }}
-            placeholder="কাস্টমারের প্রশ্ন পেস্ট করুন অথবা যেভাবে রিপ্লাই চান লিখুন (যেমন: 'ডেলিভারিম্যান অসুস্থ তাই কালকে ডেলিভারি যাবে এমন রিপ্লাই লিখে দাও', 'Chocbar price?', 'Dhanmondi delivery hobe?')..."
+            placeholder=""
             rows={3}
             className="w-full p-4 bg-slate-50/90 border border-slate-200/80 rounded-2xl text-sm sm:text-base leading-relaxed text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-purple-500 transition-all resize-none font-sans overflow-hidden min-h-[105px]"
           />
